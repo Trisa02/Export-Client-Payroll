@@ -1,0 +1,240 @@
+package com.tsa.spring.payroll.service;
+
+
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+
+import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAdiraFinance;
+import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAgriaku;
+import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
+import com.tsa.spring.payroll.dto.SearchData;
+import com.tsa.spring.payroll.entity.ReportClientAgriaku;
+import com.tsa.spring.payroll.repository.ReportClientAgriakuRepo;
+import com.tsa.spring.payroll.specification.ReportClientSpecification;
+
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
+
+@Service
+@Transactional
+public class ReportClientAgriakuService {
+
+    @Autowired
+    private ReportClientAgriakuRepo reportClientAgriakuRepo;
+
+    @Autowired
+    private ReportClientSpecification reportClientSpecification;
+
+    public void exportReportClientAgriaku(HttpServletResponse response, SearchData searchData)throws Exception{
+
+        Specification<ReportClientAgriaku> spec = reportClientSpecification.searchReportClient(searchData);
+        List<ReportClientAgriaku> dataReportClientAgriaku = reportClientAgriakuRepo.findAll(spec);
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+
+        ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateAgriaku.xlsx");
+        InputStream inputStream = temPathResource.getInputStream();
+        Workbook workbook = new XSSFWorkbook(inputStream);
+        Sheet sheet = workbook.getSheetAt(0);
+
+        Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
+
+        Set<Integer> formulaColums = new HashSet<>(Arrays.asList(
+            18,19,37,38,39,41,42,43,44,45,53,54,55,58,59,60,61,64,65,66,67,68
+        ));
+
+        Set<Integer> nullColums = new HashSet<>(Arrays.asList(
+            0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,63,70,71,72,73,74,75
+        ));
+        Set<Integer> alignCenter = Set.of(0,15, 16, 17, 18, 19, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33);
+        Set<Integer> alignRight = Set.of(12,13,75);
+        Set<Integer> percenStyle = Set.of(19);
+        Set<Integer> moneyColumns = new HashSet<>();
+        for(int i = 34; i <= 62; i++) moneyColumns.add(i);
+        for(int i = 64; i <= 68; i++) moneyColumns.add(i);
+
+        int startRowIndex = 1;
+
+        int lastRow = startRowIndex + dataReportClientAgriaku .size();
+        Row sumRow = sheet.createRow(lastRow);
+        Set<Integer> formulaSumColumns = new HashSet<>();
+        for(int i = 20; i <= 68; i++)formulaSumColumns.add(i);
+
+        for(int i = 0; i < dataReportClientAgriaku.size(); i++){
+            ReportClientAgriaku data = dataReportClientAgriaku.get(i);
+            Row row = sheet.getRow(startRowIndex + i);
+            if(row == null){
+                row = sheet.createRow(startRowIndex + i);
+            }
+
+            Map<Integer, String> cellData = new HashMap<>();
+            cellData.put(0, String.valueOf(i + 1));
+            cellData.put(1, data.getId());
+            cellData.put(2,data.getNik());
+            cellData.put(3,data.getCompany());
+            cellData.put(4,data.getNama());
+            cellData.put(5,data.getPosition());
+            cellData.put(6,data.getDepartment());
+            cellData.put(7,data.getSubDepartment());
+            cellData.put(8,data.getServiceLocation());
+            cellData.put(9,data.getRegion());
+            cellData.put(10,data.getFunction());
+            cellData.put(11,data.getMmr());
+            cellData.put(12,data.getJoinDate());
+            cellData.put(13,data.getEndContract());
+            cellData.put(14,data.getWorkDays1());
+            cellData.put(15,data.getWokrDays2());
+            cellData.put(16,data.getWorkDaysActive());
+            cellData.put(20,data.getPresence());
+            cellData.put(21,data.getSick());
+            cellData.put(22,data.getAnnualLeave());
+            cellData.put(23,data.getAlpha());
+            cellData.put(24,data.getColumnY());
+            cellData.put(25,data.getColumnZ());
+            cellData.put(26,data.getColumnAA());
+            cellData.put(27,data.getColumnAB());
+            cellData.put(28,data.getColumnAC());
+            cellData.put(29,data.getColumnAD());
+            cellData.put(30,data.getColumnAE());
+            cellData.put(31,data.getColumnAF());
+            cellData.put(32,data.getColumnAG());
+            cellData.put(33, data.getColumnAH());
+            cellData.put(34,data.getBasicSalary());
+            cellData.put(35,data.getPaidSalary());
+            cellData.put(36, data.getRapelan());
+            cellData.put(40,data.getColumnAO());
+            cellData.put(46,data.getBiayaAkomodasi());
+            cellData.put(47, data.getSewaLaptop());
+            cellData.put(48,data.getTransportasi());
+            cellData.put(49,data.getInsentifSales());
+            cellData.put(50,data.getInsentifSalesOffcycles());
+            cellData.put(51,data.getLembur());
+            cellData.put(52,data.getKompensasi());
+            cellData.put(56,data.getPotonganBpjsPerusahaan());
+            cellData.put(57,data.getPph21());
+            cellData.put(62,data.getBpjsKesehatanPerusahaan());
+            cellData.put(63,data.getIdCard());
+            cellData.put(69,data.getAccount());
+            cellData.put(70,data.getBank());
+            cellData.put(71,data.getServiceLocation());
+            cellData.put(72,data.getNama());
+            cellData.put(73,data.getNpwp());
+            cellData.put(74,data.getStatus());
+            cellData.put(75,data.getResignDate());
+
+            for(int colIndex = 0; colIndex <= 75; colIndex++){
+                Cell cell = row.getCell(colIndex);
+                if(cell == null){
+                    cell = row.createCell(colIndex);
+                }
+
+                if(formulaColums.contains(colIndex)){
+                    String formula = ExcelFormulaHelperAgriaku.generateFormula(colIndex,startRowIndex + i + 1);
+                    cell.setCellFormula(formula);
+                }else {
+                    String value = cellData.getOrDefault(colIndex, "0");
+
+                    if (value == null || value.trim().isEmpty()) {
+                        if(nullColums.contains(colIndex)){
+                            cell.setBlank();
+                        }
+                        else{
+                            cell.setCellValue(0);
+                        }
+                        
+                    } else {
+                        try {
+                            double numericValue = Double.parseDouble(value);
+                            if (numericValue == (int) numericValue) {
+                                cell.setCellValue((int) numericValue);
+                            } else {
+                                cell.setCellValue(numericValue);
+                            }
+                        } catch (NumberFormatException e) {
+                            cell.setCellValue(value);
+                        }
+                    }
+                }
+
+                if (alignCenter.contains(colIndex)) {
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_TENGAH));
+                } else if (moneyColumns.contains(colIndex)) {
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
+                } else if (alignRight.contains(colIndex)) {
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KANAN));
+                }else if(percenStyle.contains(colIndex)){
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_PERSEN));
+                }else {
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KIRI));
+                }
+
+            }
+        }
+
+        for(int colIndex = 0; colIndex <= 75; colIndex++){
+            Row headerRow = sheet.getRow(2);
+            if (headerRow == null) {
+                headerRow = sheet.createRow(2);
+            }
+
+            Cell headerCell = headerRow.getCell(colIndex);
+            if (headerCell == null) {
+                headerCell = headerRow.createCell(colIndex);
+            }
+            Cell sumCell = sumRow.createCell(colIndex);
+
+            if(colIndex == 19){
+                sumCell.setCellValue("Total");
+            }
+            if(formulaSumColumns.contains(colIndex)){
+
+                String formula = ExcelFormulaHelperAdiraFinance.generateTotalFormula(colIndex, startRowIndex + 1, lastRow);
+                sumCell.setCellFormula(formula);
+
+            }
+                
+            CellStyle sumStyle;
+            if(formulaSumColumns.contains(colIndex)){
+                sumStyle = style.get(ExcelStyleHelper.STYLE_UANG);
+            }
+            else{
+                sumStyle = style.get(ExcelStyleHelper.STYLE_TENGAH);
+            }
+
+            sumStyle = ExcelStyleHelper.applyBoldToStyle(workbook, sumStyle);
+            if (colIndex >= 20 && colIndex <= 75) {
+                byte[] yellowRgb = new byte[] {(byte) 255, (byte) 255, (byte) 0};  
+                sumStyle = ExcelStyleHelper.applyColorToStyle(workbook, sumStyle, yellowRgb);
+            }
+            sumCell.setCellStyle(sumStyle);
+        }
+
+        workbook.setForceFormulaRecalculation(true);
+        ServletOutputStream outputStream = response.getOutputStream();
+        workbook.write(outputStream);
+        outputStream.flush();
+        outputStream.close();
+        workbook.close();
+        inputStream.close();
+    }
+
+   
+}

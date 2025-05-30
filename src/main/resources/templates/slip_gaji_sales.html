@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slip Gaji</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        width: 80%;
+        margin: auto;
+      }
+
+      .info-utama {
+        width: 100%;
+        margin-bottom: 20px;
+        border-collapse: collapse;
+      }
+
+      .info-utama th,
+      .info-utama td {
+        padding: 8px;
+        font-size: 12px;
+        border-bottom: 1px solid #000;
+      }
+
+      .info-utama .left-align {
+        text-align: left;
+      }
+
+      .info-utama .right-align {
+        text-align: right;
+      }
+
+      .info-utama .date {
+        font-size: 14px;
+        font-weight: bold;
+
+        border: none;
+        padding: 10px 0;
+        text-align: right;
+      }
+
+      .info-table {
+        width: 100%;
+        margin-bottom: 20px;
+      }
+
+      .info-table td {
+        font-size: 12px;
+        padding: 3px 5px;
+      }
+
+      .salary-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      .salary-table th:first-child {
+        text-align: left;
+        border-left: none;
+        border-right: none;
+        border-top: 1px solid black;
+        border-bottom: 1px solid black;
+        padding-left: 10px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      .salary-table th:last-child {
+        text-align: left;
+        border-left: none;
+        border-right: none;
+        border-top: 1px solid black;
+        border-bottom: 1px solid black;
+        padding-left: 10px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      .salary-table td {
+        border: 1px solid #000;
+        padding: 8px;
+        font-size: 12px;
+      }
+
+      .salary-table th {
+        text-align: center;
+        font-weight: bold;
+      }
+
+      .salary-table tr:not(.total) td {
+        border: none;
+      }
+
+      .salary-table td:nth-child(2),
+      .salary-table td:nth-child(4) {
+        text-align: right;
+      }
+
+      .salary-table tr.total td {
+        border-top: px solid #000;
+        border-bottom: 1px solid #000;
+        border-left: none;
+        border-right: none;
+      }
+
+      .salary-table tr.total td:nth-child(2),
+      .salary-table tr.total td:nth-child(4) {
+        text-align: right;
+      }
+
+      .salary-table tr.total td:nth-child(1),
+      .salary-table tr.total td:nth-child(3) {
+        font-weight: bold;
+      }
+
+     .salary-table .thp td {
+        font-weight: bold; 
+        padding-top: 20px; 
+        font-size: 14px; 
+     }
+
+     .salary-table .thp td:nth-child(2) {
+        text-align: right; 
+        margin-top: 10px;
+        border: 2px solid #000; 
+        padding: 5px; 
+        display: block;
+        vertical-align: middle;
+     }
+
+      .footer {
+        margin-top: 20px;
+        font-size: 12px;
+
+      }
+
+      .footer p {
+        margin: 5px 0;
+      }
+
+      .amount {
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .note {
+        margin-top: 10px;
+        font-size: 10px;
+        text-align: right;
+      }
+
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+
+        .container {
+          width: 100%;
+          margin: 0;
+        }
+        .salary-table tr.no-print td {
+          border: none !important;
+        }
+
+        .salary-table tr.thp td {
+          border: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <table class="info-utama">
+        <tr >
+          <th colspan="2" class="left-align" >
+          </th>
+          <th colspan="2" class="right-align">SLIP GAJI</th>
+        </tr>
+        <tr >
+          <td colspan="4" class="date right-align" ></td>
+        </tr>
+      </table>
+
+      <table class="info-table">
+        <tr >
+          <td>NIK/Nama</td>
+          <td ></td>
+          <td>NPWP</td>
+          <td  ></td>
+        </tr>
+        <tr >
+          <td>Jabatan</td>
+          <td ></td>
+          <td>Gol/Grade</td>
+          <td ></td>
+        </tr>
+        <tr >
+          <td>Dept/Sect</td>
+          <td ></td>
+          <td>Cabang</td>
+          <td ></td>
+        </tr>
+      </table>
+
+      <table class="salary-table">
+        <thead>
+          <tr>
+            <th colspan="2">PENERIMAAN</th>
+            <th colspan="2">POTONGAN</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="no-print"  >
+            <td ></td>
+            <td ></td>
+            <td ></td>
+            <td ></td>
+          </tr>
+          
+          <tr class="total">
+            <td>Total Penerimaan</td>
+            <td ></td>
+            <td>Total Potongan</td>
+            <td ></td>
+          </tr>
+          <tr class="thp">
+            <td>Take Home Pay</td>
+            <td ></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <p>Ditranfer Ke:</p>
+        <p  ></p>
+        <p  ></p>
+        <p ></p>
+        <p class="note">
+          Slip Gaji ini dicetak secara komputerisasi sehingga tidak memerlukan
+          tanda tangan
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

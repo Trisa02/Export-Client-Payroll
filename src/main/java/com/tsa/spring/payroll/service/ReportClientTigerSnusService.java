@@ -2,7 +2,6 @@ package com.tsa.spring.payroll.service;
 
 
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,10 +62,8 @@ public class ReportClientTigerSnusService {
         String searchBulan = searchData.getSearchBulan();
         String searchTahun = searchData.getSearchTahun();
         String searchDivisi = searchData.getSearchDivisi();
-        LocalDate searchPeriodeStart = searchData.getSearchPeriodeStart();
-        LocalDate searchPeriodeEnd = searchData.getSearchPeriodeEnd();
         String searchEmployeeType = searchData.getSearchEmployeeType();
-        String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchPeriodeStart,searchPeriodeEnd,searchDivisi);
+        String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchDivisi);
         
 
         Row rowB3 = sheet.getRow(2);

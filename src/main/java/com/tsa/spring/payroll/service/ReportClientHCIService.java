@@ -2,7 +2,6 @@ package com.tsa.spring.payroll.service;
 
 
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +22,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.tsa.spring.payroll.Utils.DateUtil;
+import com.tsa.spring.payroll.Utils.DateUtil.MonthFormatedtoIndo;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAdiraFinance;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperHCI;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
@@ -45,6 +45,15 @@ public class ReportClientHCIService {
     @Autowired
     private ReportClientSpecification reportClientSpecification;
 
+    public String getFormattedWorkinPeriode(String bulan, String tahun,String divisi) {
+        List<Object[]> list = reportClientHCIRepo.findWorkingPeriode(bulan, tahun);
+        if (list == null || list.isEmpty()) {
+            return "-";
+        }
+        Object[] workingPeriode = list.get(0);
+        return MonthFormatedtoIndo.formatRangeFromObjectArray(workingPeriode,divisi);
+    }
+
     public void exportReportClientHCI(HttpServletResponse response, SearchData searchData)throws Exception{
 
         Specification<ReportClientHCI> spec = reportClientSpecification.searchReportClient(searchData);
@@ -62,12 +71,11 @@ public class ReportClientHCIService {
         //Untuk Header
         String searchBulan = searchData.getSearchBulan();
         String searchTahun = searchData.getSearchTahun();
-        LocalDate searchPeriodeStart = searchData.getSearchPeriodeStart();
-        LocalDate searchPeriodeEnd = searchData.getSearchPeriodeEnd();
         String searchDivisi = searchData.getSearchDivisi();
         String searchEmployeeType = searchData.getSearchEmployeeType();
-        String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchPeriodeStart,searchPeriodeEnd,searchDivisi);
-
+        String WorkingPeriode = getFormattedWorkinPeriode(searchBulan,searchTahun,searchDivisi);
+        String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchDivisi);
+        
         Row rowB3 = sheet.getRow(2);
         if(rowB3 == null){
             rowB3 = sheet.createRow(2);
@@ -96,7 +104,7 @@ public class ReportClientHCIService {
         if(cellB4 == null){
             cellB4 = rowB4.createCell(1);
         }
-        cellB4.setCellValue("Periode "+ periode);
+        cellB4.setCellValue("Periode "+periode+ " (" +WorkingPeriode+")");
 
         Row rowO5 = sheet.getRow(4);
         if(rowO5 == null){

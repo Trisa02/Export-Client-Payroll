@@ -77,7 +77,7 @@ public class ExcelFormulaHelperTiketCOM {
         }
 
         else if (colIndex == 28 && cols.size() == 6) {
-            return String.format("%s-(%s+%s+%s)-(%s-%s)",
+            return String.format("%s-(%s+%s+%s)-(%s+%s)",
                 getExcelColumnName(cols.get(0)) + excelRowNumber,
                 getExcelColumnName(cols.get(1)) + excelRowNumber,
                 getExcelColumnName(cols.get(2)) + excelRowNumber,
@@ -148,5 +148,16 @@ public class ExcelFormulaHelperTiketCOM {
 
         return "0"; 
 
+    }
+
+    public static String generateTotalFormula(int colIndex, int startRow, int endRow){
+
+        String columnName = getExcelColumnName(colIndex);
+        return String.format("SUM(%s%d:%s%d)", columnName, startRow, columnName, endRow);
+    } 
+
+    public static String generateCountFormula(int colIndex, int startRow, int endRow){
+        String columnName = getExcelColumnName(colIndex);
+        return String.format("COUNTA(%s%d:%s%d)", columnName, startRow, columnName, endRow);
     }
 }

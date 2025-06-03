@@ -2,7 +2,6 @@ package com.tsa.spring.payroll.service;
 
 
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,9 +63,7 @@ public class ReportClientMitraOddityService {
         String searchTahun = searchData.getSearchTahun();
         String searchDivisi = searchData.getSearchDivisi();
         String searchEmployeeType = searchData.getSearchEmployeeType();
-        LocalDate searchPeriodeStart = searchData.getSearchPeriodeStart();
-        LocalDate searchPeriodeEnd = searchData.getSearchPeriodeEnd();
-        String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchPeriodeStart,searchPeriodeEnd,searchDivisi);
+        String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchDivisi);
 
         
 

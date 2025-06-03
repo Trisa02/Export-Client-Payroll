@@ -13,6 +13,7 @@ public class ExcelFormulaHelperAgriaku {
     static{
         formulaColumnsMap.put(18, Arrays.asList(20,21,22,23));
         formulaColumnsMap.put(19,Arrays.asList(20,15));
+        formulaColumnsMap.put(35,Arrays.asList(17,16,34));
         formulaColumnsMap.put(37,Arrays.asList(23,15,34));
         formulaColumnsMap.put(38,Arrays.asList(20));
         formulaColumnsMap.put(39,Arrays.asList(17,16));
@@ -63,11 +64,18 @@ public class ExcelFormulaHelperAgriaku {
                 getExcelColumnName(cols.get(1)) + excelRowNumber);
         }
 
+        else if (colIndex == 35 && cols.size() == 3){
+            return String.format("IFERROR(%s/%s*%s,0)",
+                getExcelColumnName(cols.get(0)) + excelRowNumber,
+                getExcelColumnName(cols.get(1)) + excelRowNumber,
+                getExcelColumnName(cols.get(2)) + excelRowNumber);
+        }
+
         else if(colIndex == 37 && cols.size() == 3){
             return String.format("IFERROR(-%s/%s*%s,0)",
                 getExcelColumnName(cols.get(0)) + excelRowNumber,
-                getExcelColumnName(cols.get(0)) + excelRowNumber,
-                getExcelColumnName(cols.get(1)) + excelRowNumber);
+                getExcelColumnName(cols.get(1)) + excelRowNumber,
+                getExcelColumnName(cols.get(2)) + excelRowNumber);
         }
 
         else if(colIndex == 38 && cols.size() == 1){

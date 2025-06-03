@@ -11,9 +11,9 @@ public class ExcelFormulaHelperBenihBerkah {
     private static final Map<Integer, List<Integer>> formulaColumnsMap = new HashMap<>();
 
     static{
-        formulaColumnsMap.put(18, Arrays.asList(20,21,22,24));
+        formulaColumnsMap.put(18, Arrays.asList(20,21));
         formulaColumnsMap.put(19, Arrays.asList(20,15));
-        //formulaColumnsMap.put(35,Arrays.asList(17,16,34));
+        formulaColumnsMap.put(35,Arrays.asList(17,16,34));
         formulaColumnsMap.put(37,Arrays.asList(21,15,34));
         formulaColumnsMap.put(39,Arrays.asList(17,16,21,15));
         formulaColumnsMap.put(43,Arrays.asList(17,16,21,15));
@@ -62,12 +62,12 @@ public class ExcelFormulaHelperBenihBerkah {
                     getExcelColumnName(cols.get(0)) + excelRowNumber,
                     getExcelColumnName(cols.get(1)) + excelRowNumber);
         }
-        // else if (colIndex == 35 && cols.size() == 3){
-        //     return String.format("%s/%s*%s",
-        //         getExcelColumnName(cols.get(0)) + excelRowNumber,
-        //         getExcelColumnName(cols.get(1)) + excelRowNumber,
-        //         getExcelColumnName(cols.get(2)) + excelRowNumber);
-        // }
+        else if (colIndex == 35 && cols.size() == 3){
+            return String.format("IFERROR(%s/%s*%s,0)",
+                getExcelColumnName(cols.get(0)) + excelRowNumber,
+                getExcelColumnName(cols.get(1)) + excelRowNumber,
+                getExcelColumnName(cols.get(2)) + excelRowNumber);
+        }
         else if(colIndex == 37 && cols.size() == 3){
             return String.format("IFERROR(-%s/%s*%s,0)",
                 getExcelColumnName(cols.get(0)) + excelRowNumber,

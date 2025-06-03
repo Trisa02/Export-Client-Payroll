@@ -20,6 +20,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.tsa.spring.payroll.Utils.DateUtil;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperBenihBerkah;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
@@ -56,8 +57,60 @@ public class ReportClientBenihBerkahService {
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
 
+        //Untuk Header
+        String searchBulan = searchData.getSearchBulan();
+        String searchTahun = searchData.getSearchTahun();
+        Row row15 = sheet.getRow(0);
+        if(row15 == null){
+            row15 = sheet.createRow(0);
+        }
+        Cell cell15 = row15.getCell(15);
+        if(cell15 == null){
+            cell15 = row15.createCell(15);
+        }
+        String labelWorkDaysP;
+        if (searchBulan != null && !searchBulan.isEmpty() &&
+            searchTahun != null && !searchTahun.isEmpty()) {
+            
+                int bulanInt = Integer.parseInt(searchBulan);
+                int tahunInt = Integer.parseInt(searchTahun);
+
+                bulanInt -= 1;
+                if (bulanInt == 0) {
+                    bulanInt = 12;
+                    tahunInt -= 1;
+                }
+            
+                String bulanNamaStr = DateUtil.bulanNama[bulanInt - 1]; 
+                labelWorkDaysP = bulanNamaStr + " " + tahunInt;
+        } else {
+            labelWorkDaysP = "Work Days";
+        }
+        cell15.setCellValue(labelWorkDaysP);
+
+        Row row16 = sheet.getRow(0);
+        if(row16 == null){
+            row16 = sheet.createRow(0);
+        }
+        Cell cell16 = row16.getCell(16);
+        if(cell16 == null){
+            cell16 = row16.createCell(16);
+        }
+        String labelWorkDaysQ;
+        if (searchBulan != null && !searchBulan.isEmpty() &&
+            searchTahun != null && !searchTahun.isEmpty()) {
+            
+            int bulanInt = Integer.parseInt(searchBulan);
+            String bulanNamaStr = DateUtil.bulanNama[bulanInt - 1]; 
+            labelWorkDaysQ = bulanNamaStr + " " + searchTahun;
+        } else {
+            labelWorkDaysQ = "Work Days";
+        }
+        cell16.setCellValue(labelWorkDaysQ);
+
+        //Untuk Data
         Set<Integer> formulaColumns = new HashSet<>(Arrays.asList(
-            18, 19, 37, 39, 43, 44, 45, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70
+            18, 19,35, 37, 39, 43, 44, 45, 55, 56, 57, 60, 61, 62, 63, 66, 67, 68, 69, 70
         ));
 
         Set<Integer> nullColums = new HashSet<>(Arrays.asList(
@@ -120,7 +173,7 @@ public class ReportClientBenihBerkahService {
             cellData.put(32,data.getSickAF());
             cellData.put(33,data.getAnnualLeaveAG());
             cellData.put(34,data.getBasicSalary());
-            cellData.put(35,data.getBasicSalary());
+            //cellData.put(35,data.getBasicSalary());
             cellData.put(36,data.getRapel());
             cellData.put(38,data.getUangMasaKontrak());
             cellData.put(40,data.getTunjanganOperasional());

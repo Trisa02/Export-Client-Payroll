@@ -2,6 +2,8 @@ package com.tsa.spring.payroll.Utils;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 public class DateUtil {
 
@@ -58,7 +60,7 @@ public class DateUtil {
     //     }
     // }
 
-    public static String dataPeriode(String searchBulan, String searchTahun, LocalDate searchPeriodeStart, LocalDate searchPeriodeEnd, String searchDivisi) {
+    public static String dataPeriode(String searchBulan, String searchTahun,  String searchDivisi) {
         if ((searchBulan == null || searchBulan.isEmpty()) && (searchTahun == null || searchTahun.isEmpty())) {
             return "";
         }
@@ -70,34 +72,45 @@ public class DateUtil {
             bulanNamaStr = bulanNama[bulanInt - 1];
         }
     
-        boolean isHCI = "Home Credit Indonesia".equalsIgnoreCase(searchDivisi);
-        boolean isBkp = "Bank KB Bukopin".equalsIgnoreCase(searchDivisi);
-        boolean hasFullDate = searchPeriodeStart != null && searchPeriodeEnd != null;
-        int bulanStart = searchPeriodeStart.getMonthValue(); 
-        int bulanEnd = searchPeriodeEnd.getMonthValue(); 
-        String bulanStartStr = bulanNama[bulanStart - 1];
-        String bulanEndStr = bulanNama[bulanEnd - 1];
+        // boolean isHCI = "Home Credit Indonesia".equalsIgnoreCase(searchDivisi);
+        // boolean isBkp = "Bank KB Bukopin".equalsIgnoreCase(searchDivisi);
+        // boolean isTiket = "TIKET.COM".equalsIgnoreCase(searchDivisi);
+        // boolean hasFullDate = searchPeriodeStart != null && searchPeriodeEnd != null;
+   
 
-        if (isHCI && hasFullDate && bulanNamaStr != null && !bulanNamaStr.isEmpty() && searchTahun != null && !searchTahun.isEmpty()) {
-            return String.format("%s %s (%d-%d %s %s)",
-                    bulanNamaStr,
-                    searchTahun,
-                    searchPeriodeStart.getDayOfMonth(),
-                    searchPeriodeEnd.getDayOfMonth(),
-                    bulanNamaStr,
-                    searchTahun
-            );
-        }
+        // if (isHCI && hasFullDate && bulanNamaStr != null && !bulanNamaStr.isEmpty() && searchTahun != null && !searchTahun.isEmpty()) {
+        //     return String.format("%s %s (%d-%d %s %s)",
+        //             bulanNamaStr,
+        //             searchTahun,
+        //             searchPeriodeStart.getDayOfMonth(),
+        //             searchPeriodeEnd.getDayOfMonth(),
+        //             bulanNamaStr,
+        //             searchTahun
+        //     );
+        // }
 
-        if(isBkp && hasFullDate && bulanNamaStr != null && !bulanNamaStr.isEmpty() && searchTahun != null && !searchTahun.isEmpty()){
-            return String.format("%d %s - %d %s %s",
-                searchPeriodeStart.getDayOfMonth(),
-                bulanStartStr,
-                searchPeriodeEnd.getDayOfMonth(),
-                bulanEndStr,
-                searchTahun
-            );
-        }
+        // if (isTiket && hasFullDate && bulanNamaStr != null && !bulanNamaStr.isEmpty() && searchTahun != null && !searchTahun.isEmpty()) {
+        //     return String.format("%d-%d %s %s",
+        //             searchPeriodeStart.getDayOfMonth(),
+        //             searchPeriodeEnd.getDayOfMonth(),
+        //             bulanNamaStr,
+        //             searchTahun
+        //     );
+        // }
+
+        // if(isBkp && hasFullDate && bulanNamaStr != null && !bulanNamaStr.isEmpty() && searchTahun != null && !searchTahun.isEmpty()){
+        //     int bulanStart = searchPeriodeStart.getMonthValue(); 
+        //     int bulanEnd = searchPeriodeEnd.getMonthValue(); 
+        //     String bulanStartStr = bulanNama[bulanStart - 1];
+        //     String bulanEndStr = bulanNama[bulanEnd - 1];
+        //     return String.format("%d %s - %d %s %s",
+        //         searchPeriodeStart.getDayOfMonth(),
+        //         bulanStartStr,
+        //         searchPeriodeEnd.getDayOfMonth(),
+        //         bulanEndStr,
+        //         searchTahun
+        //     );
+        // }
     
         if (bulanNamaStr != null && !bulanNamaStr.isEmpty() && (searchTahun == null || searchTahun.isEmpty())) {
             return bulanNamaStr;
@@ -107,9 +120,37 @@ public class DateUtil {
             return String.format("%s %s", bulanNamaStr, searchTahun);
         }
     }
+
+    public class MonthFormatedtoIndo {
+    
+        public static String formatRangeFromObjectArray(Object[] row, String divisi) {
+            if (row == null || row.length < 2) return "-";
+    
+            LocalDate start = ((java.sql.Date) row[0]).toLocalDate();
+            LocalDate end = ((java.sql.Date) row[1]).toLocalDate();
+    
+            DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("d", new Locale("id", "ID")); // tanpa 0 di depan
+            DateTimeFormatter fullFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("id", "ID"));
+            DateTimeFormatter monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", new Locale("id", "ID"));
+    
+            if ("Tiket.com".equalsIgnoreCase(divisi)) {
+                return dayFormatter.format(start) + "-" + dayFormatter.format(end) + " " + monthYearFormatter.format(end);
+            } else if ("Bank KB Bukopin".equalsIgnoreCase(divisi)) {
+                return fullFormatter.format(start) + " - " + fullFormatter.format(end);
+            } else if ("Home Credit Indonesia".equalsIgnoreCase(divisi)) {
+                return dayFormatter.format(start) + " - " + dayFormatter.format(end) + " " + monthYearFormatter.format(end);
+            }
+    
+            // Default jika divisi tidak cocok
+            return dayFormatter.format(start) + "-" + dayFormatter.format(end) + " " + monthYearFormatter.format(end);
+        
+        }
+    }
+}
+
     
 
 
 
 
-}
+

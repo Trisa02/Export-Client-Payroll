@@ -20,6 +20,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.tsa.spring.payroll.Utils.DateUtil;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAdiraFinance;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAgriaku;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
@@ -57,6 +58,58 @@ public class ReportClientAgriakuService {
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
 
+        //Untuk Header
+        String searchBulan = searchData.getSearchBulan();
+        String searchTahun = searchData.getSearchTahun();
+
+        Row row15 = sheet.getRow(0);
+        if(row15 == null){
+            row15 = sheet.createRow(0);
+        }
+        Cell cell15 = row15.getCell(15);
+        if(cell15 == null){
+            cell15 = row15.createCell(15);
+        }
+        String labelWorkDaysP;
+        if (searchBulan != null && !searchBulan.isEmpty() &&
+            searchTahun != null && !searchTahun.isEmpty()) {
+            
+                int bulanInt = Integer.parseInt(searchBulan);
+                int tahunInt = Integer.parseInt(searchTahun);
+
+                bulanInt -= 1;
+                if (bulanInt == 0) {
+                    bulanInt = 12;
+                    tahunInt -= 1;
+                }
+            
+                String bulanNamaStr = DateUtil.bulanNama[bulanInt - 1]; 
+                labelWorkDaysP = bulanNamaStr + " " + tahunInt;
+        } else {
+            labelWorkDaysP = "Work Days";
+        }
+        cell15.setCellValue(labelWorkDaysP);
+
+        Row row16 = sheet.getRow(0);
+        if(row16 == null){
+            row16 = sheet.createRow(0);
+        }
+        Cell cell16 = row16.getCell(16);
+        if(cell16 == null){
+            cell16 = row16.createCell(16);
+        }
+        String labelWorkDaysQ;
+        if (searchBulan != null && !searchBulan.isEmpty() &&
+            searchTahun != null && !searchTahun.isEmpty()) {
+            
+            int bulanInt = Integer.parseInt(searchBulan);
+            String bulanNamaStr = DateUtil.bulanNama[bulanInt - 1]; 
+            labelWorkDaysQ = bulanNamaStr + " " + searchTahun;
+        } else {
+            labelWorkDaysQ = "Work Days";
+        }
+        cell16.setCellValue(labelWorkDaysQ);
+        //Untuk Data
         Set<Integer> formulaColums = new HashSet<>(Arrays.asList(
             18,19,37,38,39,41,42,43,44,45,53,54,55,58,59,60,61,64,65,66,67,68
         ));
@@ -73,11 +126,13 @@ public class ReportClientAgriakuService {
 
         int startRowIndex = 1;
 
+        //Untuk Sum Total
         int lastRow = startRowIndex + dataReportClientAgriaku .size();
         Row sumRow = sheet.createRow(lastRow);
         Set<Integer> formulaSumColumns = new HashSet<>();
         for(int i = 20; i <= 68; i++)formulaSumColumns.add(i);
 
+        //Untuk Data
         for(int i = 0; i < dataReportClientAgriaku.size(); i++){
             ReportClientAgriaku data = dataReportClientAgriaku.get(i);
             Row row = sheet.getRow(startRowIndex + i);
@@ -100,9 +155,10 @@ public class ReportClientAgriakuService {
             cellData.put(11,data.getMmr());
             cellData.put(12,data.getJoinDate());
             cellData.put(13,data.getEndContract());
-            cellData.put(14,data.getWorkDays1());
-            cellData.put(15,data.getWokrDays2());
-            cellData.put(16,data.getWorkDaysActive());
+            cellData.put(14,data.getMaritalStatus());
+            cellData.put(15,data.getWorkDays1());
+            cellData.put(16,data.getWokrDays2());
+            cellData.put(17, data.getWorkDaysActive());
             cellData.put(20,data.getPresence());
             cellData.put(21,data.getSick());
             cellData.put(22,data.getAnnualLeave());
@@ -118,7 +174,7 @@ public class ReportClientAgriakuService {
             cellData.put(32,data.getColumnAG());
             cellData.put(33, data.getColumnAH());
             cellData.put(34,data.getBasicSalary());
-            cellData.put(35,data.getPaidSalary());
+            //cellData.put(35,data.getPaidSalary());
             cellData.put(36, data.getRapelan());
             cellData.put(40,data.getColumnAO());
             cellData.put(46,data.getBiayaAkomodasi());

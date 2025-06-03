@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
@@ -20,6 +21,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.tsa.spring.payroll.Utils.DateUtil;
+import com.tsa.spring.payroll.Utils.DateUtil.MonthFormatedtoIndo;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperTiketCOM;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
@@ -41,9 +44,19 @@ public class ReportClientTiketComService {
     @Autowired
     private ReportClientSpecification reportClientSpecification;
 
-    public void exportClientTiketCom(HttpServletResponse response, SearchData searchDat)throws Exception{
+    public String getFormattedWorkinPeriode(String bulan, String tahun,String divisi) {
+        List<Object[]> list = reportClientTiketComRepo.findWorkingPeriode(bulan, tahun);
+        if (list == null || list.isEmpty()) {
+            return "-";
+        }
+        Object[] workingPeriode = list.get(0);
+        return MonthFormatedtoIndo.formatRangeFromObjectArray(workingPeriode,divisi);
+    }
+    
+    
+    public void exportClientTiketCom(HttpServletResponse response, SearchData searchData)throws Exception{
 
-        Specification<ReportClientTiketCOM> spec = reportClientSpecification.searchReportClient(searchDat);
+        Specification<ReportClientTiketCOM> spec = reportClientSpecification.searchReportClient(searchData);
         List<ReportClientTiketCOM> dataClientTiketCOM = reportClientTiketComRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -55,6 +68,122 @@ public class ReportClientTiketComService {
         Sheet sheet = workbook.getSheetAt(0);
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
+
+        //Untuk Data Header
+
+        String searchBulan = searchData.getSearchBulan();
+        String searchTahun = searchData.getSearchTahun();
+        String searchDivisi = searchData.getSearchDivisi();
+        String WorkingPeriode = getFormattedWorkinPeriode(searchBulan,searchTahun,searchDivisi);
+        
+        Row row3 = sheet.getRow(3);
+        if(row3 == null){
+            row3 = sheet.createRow(3);
+        }
+        Cell cellc = row3.getCell(2);
+        if(cellc == null){
+            cellc = row3.createCell(2);
+        }
+        cellc.setCellValue(WorkingPeriode);
+
+        Row row4 = sheet.getRow(4);
+        if(row4 == null){
+            row4 = sheet.createRow(4);
+        }
+        Cell cell2 = row4.getCell(2);
+        if(cell2 == null){
+            cell2 = row4.createCell(2);
+        }
+
+        String labelPeriode;
+        if (searchBulan != null && !searchBulan.isEmpty() &&
+            searchTahun != null && !searchTahun.isEmpty()) {
+            
+            int bulanInt = Integer.parseInt(searchBulan);
+            String bulanNamaStr = DateUtil.bulanNama[bulanInt - 1]; 
+            labelPeriode = bulanNamaStr + " " + searchTahun;
+        } else {
+            labelPeriode = "";
+        }
+
+        cell2.setCellValue(labelPeriode);
+
+        Row row9 = sheet.getRow(8);
+        if(row9  == null){
+            row9  = sheet.createRow(8);
+        }
+        Cell cell42 = row9 .getCell(42);
+        if(cell42 == null){
+            cell42 = row9.createCell(42);
+        }
+        String labelbulan;
+        if (searchBulan != null && !searchBulan.isEmpty() &&
+            searchTahun != null && !searchTahun.isEmpty()) {
+            
+            int bulanInt = Integer.parseInt(searchBulan);
+            String bulanNamaStr = DateUtil.bulanNama[bulanInt - 1]; 
+            labelbulan = bulanNamaStr + " " + searchTahun;
+        } else {
+            labelbulan= "";
+        }
+        cell42.setCellValue(labelbulan);
+
+        int sumRowIndex = 6;
+        int startRowIndex = 10;
+        int lastRow = startRowIndex + dataClientTiketCOM.size();
+        Row sumRow = sheet.createRow(sumRowIndex);
+        // Cell countC7 = sumRow.createCell(2);
+        // countC7.setCellValue("Total");
+        Set<Integer> formulaSumColumns = new HashSet<>();
+        for(int i = 8; i <= 16; i++)formulaSumColumns.add(i);
+        for(int i =19; i <= 38; i++)formulaSumColumns.add(i);
+
+        for(int colIndex = 2; colIndex <= 40; colIndex++){
+            Row headerRow = sheet.getRow(2);
+            if (headerRow == null) {
+                headerRow = sheet.createRow(2);
+            }
+
+            Cell headerCell = headerRow.getCell(colIndex);
+            if (headerCell == null) {
+                headerCell = headerRow.createCell(colIndex);
+            }
+            Cell sumCell = sumRow.createCell(colIndex);
+
+            if(colIndex == 2){
+                String formula = ExcelFormulaHelperTiketCOM.generateCountFormula(colIndex, startRowIndex + 1, lastRow);
+                sumCell.setCellFormula(formula);
+                
+            }
+            if(formulaSumColumns.contains(colIndex)){
+                String formula = ExcelFormulaHelperTiketCOM.generateTotalFormula(colIndex, startRowIndex + 1, lastRow);
+                sumCell.setCellFormula(formula);
+            }
+
+
+            if (colIndex == 2 || (colIndex >= 8 && colIndex <= 16) || (colIndex >= 19 && colIndex <= 38)) {
+                CellStyle sumStyle;
+                if (formulaSumColumns.contains(colIndex)) {
+                    sumStyle = style.get(ExcelStyleHelper.STYLE_UANG);
+                } else {
+                    sumStyle = style.get(ExcelStyleHelper.STYLE_TENGAH);
+                }
+        
+                CellStyle newStyle = workbook.createCellStyle();
+                newStyle.cloneStyleFrom(sumStyle);
+
+                newStyle.setBorderTop(BorderStyle.NONE);
+                newStyle.setBorderBottom(BorderStyle.NONE);
+                newStyle.setBorderLeft(BorderStyle.NONE);
+                newStyle.setBorderRight(BorderStyle.NONE);
+
+                newStyle = ExcelStyleHelper.applyBoldToStyle(workbook, newStyle);
+                byte[] yellowRgb = new byte[] { (byte) 255, (byte) 252, (byte) 4 };
+                newStyle = ExcelStyleHelper.applyColorToStyle(workbook, newStyle, yellowRgb);
+                
+                sumCell.setCellStyle(newStyle);
+            }
+        }
 
         Set<Integer> formulaColums = new HashSet<>(Arrays.asList(
             19,22,23,24,25,28,29,30,31,32,33,34,35,36,37,38
@@ -71,7 +200,7 @@ public class ReportClientTiketComService {
         for(int i = 22; i<= 38; i++)moneyColumns.add(i);
         moneyColumns.add(40);
 
-        int startRowIndex = 10;
+       
 
         for(int i = 0; i < dataClientTiketCOM.size(); i++){
 
@@ -155,6 +284,32 @@ public class ReportClientTiketComService {
 
             }
 
+            int colAR = 43; 
+
+            Map<Integer, String> cellMappings = Map.of(
+                9, "AI7",
+                10, "AJ7",
+                11, "AK7",
+                12, "AL7",
+                13, "C7"
+            );
+
+            for (Map.Entry<Integer, String> entry : cellMappings.entrySet()) {
+                int rowIndex = entry.getKey();
+                String formula = entry.getValue();
+
+                Row rowar = sheet.getRow(rowIndex);
+                if (rowar == null) {
+                    rowar = sheet.createRow(rowIndex);
+                }
+
+                Cell cell = rowar.createCell(colAR); 
+                cell.setCellFormula(formula);
+                CellStyle sumStyle;
+                sumStyle=style.get(ExcelStyleHelper.STYLE_UANG);
+                cell.setCellStyle(sumStyle);
+
+            }
         }
 
         workbook.setForceFormulaRecalculation(true);

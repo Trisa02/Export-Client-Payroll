@@ -2,7 +2,6 @@ package com.tsa.spring.payroll.service;
 
 
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +20,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import com.tsa.spring.payroll.Utils.DateUtil;
+import com.tsa.spring.payroll.Utils.DateUtil.MonthFormatedtoIndo;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperBukopin;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
@@ -43,6 +42,15 @@ public class ReportClientBukopinService {
     @Autowired
     private ReportClientSpecification reportClientSpecification;
 
+    public String getFormattedWorkinPeriode(String bulan, String tahun,String divisi) {
+        List<Object[]> list = reportClientBukopinRepo.findWorkingPeriode(bulan, tahun);
+        if (list == null || list.isEmpty()) {
+            return "-";
+        }
+        Object[] workingPeriode = list.get(0);
+        return MonthFormatedtoIndo.formatRangeFromObjectArray(workingPeriode,divisi);
+    }
+
     public void exportClientBukopin(HttpServletResponse response, SearchData searchData)throws Exception{
 
         Specification<ReportClientBukopin> spec = reportClientSpecification.searchReportClient(searchData);
@@ -62,10 +70,9 @@ public class ReportClientBukopinService {
         String searchBulan = searchData.getSearchBulan();
         String searchTahun = searchData.getSearchTahun();
         String searchDivisi = searchData.getSearchDivisi();
-        LocalDate searchPeriodeStart = searchData.getSearchPeriodeStart();
-        LocalDate searchPeriodeEnd = searchData.getSearchPeriodeEnd(); 
         String searchEmployeeType = searchData.getSearchEmployeeType();
-        String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchPeriodeStart,searchPeriodeEnd,searchDivisi);
+        String WorkingPeriode = getFormattedWorkinPeriode(searchBulan,searchTahun,searchDivisi);
+        //String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchDivisi);
 
         Row rowB3 = sheet.getRow(2);
         if(rowB3 == null){
@@ -93,7 +100,7 @@ public class ReportClientBukopinService {
         if(cellB4 == null){
             cellB4 = rowB4.createCell(0);
         }
-        cellB4.setCellValue("Periode "+ periode);
+        cellB4.setCellValue("Periode "+ WorkingPeriode);
 
 
 
@@ -227,7 +234,7 @@ public class ReportClientBukopinService {
             }
             Cell sumCell = sumRow.createCell(colIndex);
 
-             if(colIndex == 2){
+            if(colIndex == 2){
                 sumCell.setCellValue("Total");
             }
             if(formulaSumColumns.contains(colIndex)){

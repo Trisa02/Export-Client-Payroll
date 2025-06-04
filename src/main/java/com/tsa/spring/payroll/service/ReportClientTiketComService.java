@@ -317,6 +317,23 @@ public class ReportClientTiketComService {
                 cell.setCellStyle(sumStyle);
 
             }
+
+            int rowYz = 3; 
+
+            Row rowYz4 = sheet.getRow(rowYz);
+            if (rowYz4 == null) {
+                rowYz4 = sheet.createRow(rowYz);
+            }
+
+            // Kolom Y = index ke-24
+            Cell cellY4 = rowYz4.createCell(24); 
+            cellY4.setCellFormula("Y3*1%");
+            cellY4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
+
+            // Kolom Z = index ke-25
+            Cell cellZ4 = rowYz4.createCell(25); 
+            cellZ4.setCellFormula("Z3*1%");
+            cellZ4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
         }
 
         workbook.setForceFormulaRecalculation(true);

@@ -75,10 +75,10 @@ public class ExcelStyleHelper {
         styles.put(STYLE_UANG, styleUang);
 
         CellStyle stylePersen = workbook.createCellStyle();
-        stylePersen.setAlignment(HorizontalAlignment.RIGHT);
+        stylePersen.setDataFormat(workbook.createDataFormat().getFormat("0%"));
+        stylePersen.setAlignment(HorizontalAlignment.CENTER);
         stylePersen.setVerticalAlignment(VerticalAlignment.CENTER);
         stylePersen.setFont(font);
-        stylePersen.setDataFormat(persenFormat);
         setBorder(stylePersen);
         styles.put(STYLE_PERSEN, stylePersen);
 

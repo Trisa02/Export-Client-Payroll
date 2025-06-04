@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -22,12 +23,12 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.tsa.spring.payroll.Utils.DateUtil;
-import com.tsa.spring.payroll.Utils.DateUtil.MonthFormatedtoIndo;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAdiraFinance;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperHCI;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
 import com.tsa.spring.payroll.entity.ReportClientHCI;
+import com.tsa.spring.payroll.repository.MasterDivisiRepo;
 import com.tsa.spring.payroll.repository.ReportClientHCIRepo;
 import com.tsa.spring.payroll.specification.ReportClientSpecification;
 
@@ -45,13 +46,18 @@ public class ReportClientHCIService {
     @Autowired
     private ReportClientSpecification reportClientSpecification;
 
+    @Autowired
+    private MasterDivisiRepo masterDivisiRepo;
+
     public String getFormattedWorkinPeriode(String bulan, String tahun,String divisi) {
         List<Object[]> list = reportClientHCIRepo.findWorkingPeriode(bulan, tahun);
         if (list == null || list.isEmpty()) {
             return "-";
         }
         Object[] workingPeriode = list.get(0);
-        return MonthFormatedtoIndo.formatRangeFromObjectArray(workingPeriode,divisi);
+        Optional<String>exportTypeDivisi = masterDivisiRepo.findExportTypeByNamaIgnoreCase(divisi);
+        String exportType = exportTypeDivisi.orElse(divisi);
+        return DateUtil.formatRangeFromObjectArray(workingPeriode,exportType);
     }
 
     public void exportReportClientHCI(HttpServletResponse response, SearchData searchData)throws Exception{
@@ -60,7 +66,7 @@ public class ReportClientHCIService {
         List<ReportClientHCI> dataClientHCI = reportClientHCIRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientHomeCreditIndonesia.xlsx");
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateHCI.xlsx");
         InputStream inputStream = temPathResource.getInputStream();

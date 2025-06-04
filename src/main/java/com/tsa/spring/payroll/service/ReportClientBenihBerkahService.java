@@ -48,7 +48,7 @@ public class ReportClientBenihBerkahService {
         List<ReportClientBenihBerkah> dataReportClients = reportClientRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientBenihBerkahBerseri.xlsx");
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateBerkahBenihBerseri.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
@@ -234,15 +234,15 @@ public class ReportClientBenihBerkahService {
                     }
                 }
 
-                if (alignCenter.contains(colIndex)) {
+                if (percenStyle.contains(colIndex)) {
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_PERSEN));
+                } else if (alignCenter.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_TENGAH));
                 } else if (moneyColumns.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
                 } else if (alignRight.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KANAN));
-                }else if(percenStyle.contains(colIndex)){
-                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_PERSEN));
-                }else {
+                } else {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KIRI));
                 }
             }

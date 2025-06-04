@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
@@ -16,17 +17,18 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.hibernate.id.enhanced.Optimizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.tsa.spring.payroll.Utils.DateUtil;
-import com.tsa.spring.payroll.Utils.DateUtil.MonthFormatedtoIndo;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperTiketCOM;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
 import com.tsa.spring.payroll.entity.ReportClientTiketCOM;
+import com.tsa.spring.payroll.repository.MasterDivisiRepo;
 import com.tsa.spring.payroll.repository.ReportClientTiketComRepo;
 import com.tsa.spring.payroll.specification.ReportClientSpecification;
 
@@ -42,6 +44,9 @@ public class ReportClientTiketComService {
     private ReportClientTiketComRepo reportClientTiketComRepo;
 
     @Autowired
+    private MasterDivisiRepo masterDivisiRepo;
+
+    @Autowired
     private ReportClientSpecification reportClientSpecification;
 
     public String getFormattedWorkinPeriode(String bulan, String tahun,String divisi) {
@@ -50,7 +55,9 @@ public class ReportClientTiketComService {
             return "-";
         }
         Object[] workingPeriode = list.get(0);
-        return MonthFormatedtoIndo.formatRangeFromObjectArray(workingPeriode,divisi);
+        Optional<String>exportTypeDivisi = masterDivisiRepo.findExportTypeByNamaIgnoreCase(divisi);
+        String exportType = exportTypeDivisi.orElse(divisi);
+        return DateUtil.formatRangeFromObjectArray(workingPeriode,exportType);
     }
     
     
@@ -60,7 +67,7 @@ public class ReportClientTiketComService {
         List<ReportClientTiketCOM> dataClientTiketCOM = reportClientTiketComRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientTIKETCOM.xlsx");
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateTiket.xlsx");
         InputStream inputStream = temPathResource.getInputStream();

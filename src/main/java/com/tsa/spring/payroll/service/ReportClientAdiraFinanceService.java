@@ -50,7 +50,7 @@ public class ReportClientAdiraFinanceService {
         
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientAdiraFinance.xlsx");
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response.setHeader("Pragma", "no-cache");
         response.setHeader("Expires", "0");

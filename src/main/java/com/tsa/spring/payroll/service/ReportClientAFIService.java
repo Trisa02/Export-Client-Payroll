@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -26,6 +27,7 @@ import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAfi;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
 import com.tsa.spring.payroll.entity.ReportClientAFI;
+import com.tsa.spring.payroll.repository.MasterDivisiRepo;
 import com.tsa.spring.payroll.repository.ReportClientAFIRepo;
 import com.tsa.spring.payroll.specification.ReportClientSpecification;
 
@@ -43,13 +45,26 @@ public class ReportClientAFIService {
     @Autowired
     private ReportClientSpecification reportClientSpecification;
 
+    @Autowired
+    private MasterDivisiRepo masterDivisiRepo;
+
     public void exportReportClientAFI(HttpServletResponse response, SearchData searchData)throws Exception{
 
         Specification<ReportClientAFI> spec = reportClientSpecification.searchReportClient(searchData);
         List<ReportClientAFI> dataClientAFI = reportClientAFIRepo.findAll(spec);
 
+        Optional<String> exportTypeOpt = masterDivisiRepo.findExportTypeByNamaIgnoreCase(searchData.getSearchDivisi());
+        String exportType = exportTypeOpt.orElse(searchData.getSearchDivisi());
+
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        if ("afi".equalsIgnoreCase(exportType)) {
+            response.setHeader("Content-Disposition", "attachment; filename=ReportClientAFI.xlsx");
+        } else if ("msi".equalsIgnoreCase(exportType)) {
+            response.setHeader("Content-Disposition", "attachment; filename=ReportClientMSI.xlsx");
+        }else {
+            response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        }
+        
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateAFI.xlsx");
         InputStream inputStream = temPathResource.getInputStream();

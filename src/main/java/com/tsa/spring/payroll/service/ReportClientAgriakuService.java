@@ -49,7 +49,7 @@ public class ReportClientAgriakuService {
         List<ReportClientAgriaku> dataReportClientAgriaku = reportClientAgriakuRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientAgriakuDigitalIndonesia.xlsx");
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateAgriaku.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
@@ -230,15 +230,15 @@ public class ReportClientAgriakuService {
                     }
                 }
 
-                if (alignCenter.contains(colIndex)) {
+                if (percenStyle.contains(colIndex)) {
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_PERSEN));
+                } else if (alignCenter.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_TENGAH));
                 } else if (moneyColumns.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
                 } else if (alignRight.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KANAN));
-                }else if(percenStyle.contains(colIndex)){
-                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_PERSEN));
-                }else {
+                } else {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KIRI));
                 }
 

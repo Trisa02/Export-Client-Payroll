@@ -48,9 +48,6 @@ public class ReportClientMitraOddityService {
         Specification<ReportClientMitraOddity> spec = reportClientSpecification.searchReportClient(searchData);
         List<ReportClientMitraOddity> dataClientMitraOddities = reportClientMitraOddityRepo.findAll(spec);
 
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
-
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateMitraOdity.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
@@ -285,12 +282,14 @@ public class ReportClientMitraOddityService {
 
 
         workbook.setForceFormulaRecalculation(true);
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientMitraOddityIndonesia.xlsx");
         ServletOutputStream outputStream = response.getOutputStream();
         workbook.write(outputStream);
         outputStream.flush();
         outputStream.close();
         workbook.close();
-        inputStream.close();
+        //inputStream.close();
 
     }
 

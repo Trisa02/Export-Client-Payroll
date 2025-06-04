@@ -49,7 +49,7 @@ public class ReportClientTigerSnusService {
         List<ReportClientTigerSnus> dataClientTigerSnus = reportClientTigerSnusRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientTigerSnus.xlsx");
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateTigerSnus.xlsx");
         InputStream inputStream = temPathResource.getInputStream();

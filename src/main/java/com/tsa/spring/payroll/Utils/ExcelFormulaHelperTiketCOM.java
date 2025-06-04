@@ -160,4 +160,6 @@ public class ExcelFormulaHelperTiketCOM {
         String columnName = getExcelColumnName(colIndex);
         return String.format("COUNTA(%s%d:%s%d)", columnName, startRow, columnName, endRow);
     }
+
+    
 }

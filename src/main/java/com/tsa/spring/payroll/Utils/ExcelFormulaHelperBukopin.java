@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.poi.ss.util.CellReference;
+
 public class ExcelFormulaHelperBukopin {
 
     private static final Map<Integer, List<Integer>> formulaColumnsMap =new HashMap<>();
@@ -131,4 +133,46 @@ public class ExcelFormulaHelperBukopin {
         String columnName = getExcelColumnName(colIndex);
         return String.format("SUM(%s%d:%s%d)", columnName, startRow, columnName, endRow);
     }
+
+
+    public static String formulaInvoice(String type, int colIndex, int startRow, int endRow){
+
+        String colInvoice = CellReference.convertNumToColString(colIndex);
+
+        switch (type) {
+            case "C4":
+                return String.format("Bukopin!%s%d", colInvoice, endRow);
+
+            case "E4":
+                return String.format("Bukopin!%s%d", colInvoice, endRow);
+
+            case "F4":
+                return "E4+C4";
+
+            case "C7":
+                return "SUM(C4)";
+
+            case "E7":
+                return "SUM(E4)";
+            
+            case "F7":
+                return "SUM(F4)";
+                
+            case "F8":
+                return "ROUND(E7*11%,0)";
+
+            case "F9":
+                return "ROUND(E7*2%,0)";
+
+            case "F10":
+                return "ROUND(SUM(F7:F8)-F9,0)";
+
+            case "F11":
+                return "F10";
+            default:
+                throw new IllegalArgumentException("Tipe rumus tidak dikenali: " + type);
+        }
+    }
+
+
 }

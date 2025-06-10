@@ -51,25 +51,27 @@ public class ReportClientAdiraFinanceService {
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=ReportClientAdiraFinance.xlsx");
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Expires", "0");
+
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateAdiraFinance.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = workbook.getSheetAt(0);
+        //Sheet sheet = workbook.getSheetAt(0);
+        Sheet invoiceSheet = workbook.getSheet("INVOICE");
+        Sheet adiraSheet = workbook.getSheet("Adira Finance");
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
 
         ///Untuk Header
         String searchBulan = searchData.getSearchBulan();
         String searchTahun = searchData.getSearchTahun();
+        String searchDivisi = searchData.getSearchDivisi();
         String tanggalToDisplay = DateUtil.dataTanggal(searchBulan, searchTahun);
+        String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchDivisi);
         
-        Row rowC2 = sheet.getRow(1);
+        Row rowC2 = adiraSheet.getRow(1);
         if(rowC2 == null){
-            rowC2= sheet.createRow(1);
+            rowC2= adiraSheet.createRow(1);
         }
 
         Cell cellC2 = rowC2.getCell(2);
@@ -94,9 +96,9 @@ public class ReportClientAdiraFinanceService {
         }
         
 
-        Row rowK4 = sheet.getRow(3); 
+        Row rowK4 = adiraSheet.getRow(3); 
         if (rowK4 == null) {
-            rowK4 = sheet.createRow(3);
+            rowK4 = adiraSheet.createRow(3);
         }
 
         Cell cellK4 = rowK4.getCell(10);  
@@ -139,9 +141,9 @@ public class ReportClientAdiraFinanceService {
         for(int i = 0; i < dataclientAdiraFinance.size(); i ++){
 
             ReportClientAdiraFinance data = dataclientAdiraFinance.get(i);
-            Row row = sheet.getRow(startRowIndex + i);
+            Row row = adiraSheet.getRow(startRowIndex + i);
             if(row == null){
-                row = sheet.createRow(startRowIndex + i);
+                row = adiraSheet.createRow(startRowIndex + i);
             }
 
             Map<Integer, String> cellData = new HashMap<>();
@@ -216,7 +218,8 @@ public class ReportClientAdiraFinanceService {
 
         ///Sum Total
         int lastRow = startRowIndex + dataclientAdiraFinance.size();
-        Row sumRow = sheet.createRow(lastRow);
+        Row sumRow = adiraSheet.createRow(lastRow);
+        int sumRowIndex = lastRow  + 1;
         
         Set<Integer> formulaSumColumns = new HashSet<>(Arrays.asList(
             10,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26
@@ -224,9 +227,9 @@ public class ReportClientAdiraFinanceService {
 
         for(int colIndex = 0; colIndex <= 26; colIndex++){
 
-            Row headerRow = sheet.getRow(2);
+            Row headerRow = adiraSheet.getRow(2);
             if (headerRow == null) {
-                headerRow = sheet.createRow(2);
+                headerRow = adiraSheet.createRow(2);
             }
 
             Cell headerCell = headerRow.getCell(colIndex);
@@ -239,7 +242,7 @@ public class ReportClientAdiraFinanceService {
                 sumCell.setCellValue("Total");
                 sumCell.setCellStyle(style.get(ExcelStyleHelper.STYLE_MERGE_CENTER));  // Pakai style merge kiri
 
-                sheet.addMergedRegion(new CellRangeAddress(lastRow, lastRow, 0, 5));
+                adiraSheet.addMergedRegion(new CellRangeAddress(lastRow, lastRow, 0, 5));
             }
             if(formulaSumColumns.contains(colIndex)){
 
@@ -265,6 +268,67 @@ public class ReportClientAdiraFinanceService {
 
            
         }
+
+        //Untuk Invoice
+        Row rowInvoiceA8 = invoiceSheet.getRow(7);
+        if(rowInvoiceA8 == null) rowInvoiceA8 = invoiceSheet.createRow(7);
+        Cell cellInvoiceA8 = rowInvoiceA8.getCell(0);
+        cellInvoiceA8.setCellValue("Periode "+ periode);
+
+        Row rowInvoiceA13 = invoiceSheet.getRow(13);
+        if(rowInvoiceA13 == null) rowInvoiceA13 = invoiceSheet.createRow(13);
+
+        Cell cellInvoiceA13 = rowInvoiceA13.createCell(0);
+        cellInvoiceA13.setCellValue(DateUtil.getTanggalNow());
+        cellInvoiceA13.setCellStyle(style.get(ExcelStyleHelper.STYLE_BOLD));
+
+        Row rowInvoice11 = invoiceSheet.getRow(10);
+        if (rowInvoice11 == null) {
+            rowInvoice11 = invoiceSheet.createRow(10);
+        }
+
+        Cell cellInvoiceC11 = rowInvoice11.createCell(2);
+        cellInvoiceC11.setCellFormula(ExcelFormulaHelperAdiraFinance.formulaInvoice("C11", startRowIndex, sumRowIndex));
+        cellInvoiceC11.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
+
+        Cell cellInvoiceD11 = rowInvoice11.createCell(3);
+        cellInvoiceD11.setCellFormula(ExcelFormulaHelperAdiraFinance.formulaInvoice("D11", startRowIndex, sumRowIndex));
+        cellInvoiceD11.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
+
+        Cell cellInvoiceE11 = rowInvoice11.createCell(4);
+        cellInvoiceE11.setCellFormula(ExcelFormulaHelperAdiraFinance.formulaInvoice("E11", startRowIndex, sumRowIndex));
+        cellInvoiceE11.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
+
+        Row rowInvoice12 = invoiceSheet.getRow(11);
+        if (rowInvoice12 == null) {
+            rowInvoice12 = invoiceSheet.createRow(11);
+        }
+
+        Cell cellInvoiceC12   = rowInvoice12.createCell(2);
+        cellInvoiceC12 .setCellFormula(ExcelFormulaHelperAdiraFinance.formulaInvoice("C12", startRowIndex, sumRowIndex));
+        CellStyle sumStyle = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP);
+        byte[] yellowRgb = new byte[] {(byte) 184, (byte) 196, (byte) 228};
+        sumStyle = ExcelStyleHelper.applyColorToStyle(workbook, sumStyle, yellowRgb);
+        cellInvoiceC12.setCellStyle(sumStyle);
+
+
+        Cell cellInvoiceD12   =rowInvoice12.createCell(3);
+        cellInvoiceD12.setCellFormula(ExcelFormulaHelperAdiraFinance.formulaInvoice("D12", startRowIndex, sumRowIndex));
+        CellStyle sumStyleD12 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP);
+        sumStyleD12 = ExcelStyleHelper.applyColorToStyle(workbook, sumStyle, yellowRgb);
+        cellInvoiceD12.setCellStyle(sumStyleD12);
+
+
+        Cell cellInvoiceE12   = rowInvoice12.createCell(4);
+        cellInvoiceE12.setCellFormula(ExcelFormulaHelperAdiraFinance.formulaInvoice("E12", startRowIndex, sumRowIndex));
+        CellStyle sumStyleE12 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP);
+        sumStyleE12 = ExcelStyleHelper.applyColorToStyle(workbook, sumStyle, yellowRgb);
+        cellInvoiceE12.setCellStyle(sumStyleE12);
+
+
+
+
+
 
         //workbook.setForceFormulaRecalculation(true);
         workbook.setForceFormulaRecalculation(true);

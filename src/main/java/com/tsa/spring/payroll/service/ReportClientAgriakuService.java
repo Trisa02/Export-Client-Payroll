@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -26,6 +27,7 @@ import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAgriaku;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
 import com.tsa.spring.payroll.entity.ReportClientAgriaku;
+import com.tsa.spring.payroll.repository.MasterDivisiRepo;
 import com.tsa.spring.payroll.repository.ReportClientAgriakuRepo;
 import com.tsa.spring.payroll.specification.ReportClientSpecification;
 
@@ -43,6 +45,20 @@ public class ReportClientAgriakuService {
     @Autowired
     private ReportClientSpecification reportClientSpecification;
 
+    @Autowired
+    private MasterDivisiRepo masterDivisiRepo;
+
+    public String getFormattedWorkinPeriode(String bulan, String tahun,String divisi) {
+        List<Object[]> list = reportClientAgriakuRepo.findWorkingPeriode(bulan, tahun);
+        if (list == null || list.isEmpty()) {
+            return "-";
+        }
+        Object[] workingPeriode = list.get(0);
+        Optional<String>exportTypeDivisi = masterDivisiRepo.findExportTypeByNamaIgnoreCase(divisi);
+        String exportType = exportTypeDivisi.orElse(divisi);
+        return DateUtil.formatRangeFromObjectArray(workingPeriode,exportType);
+    }
+
     public void exportReportClientAgriaku(HttpServletResponse response, SearchData searchData)throws Exception{
 
         Specification<ReportClientAgriaku> spec = reportClientSpecification.searchReportClient(searchData);
@@ -54,17 +70,24 @@ public class ReportClientAgriakuService {
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateAgriaku.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = workbook.getSheetAt(0);
+        //Sheet sheet = workbook.getSheetAt(0);
+        Sheet invoiceSheet = workbook.getSheet("Invoice");
+        Sheet agriakuSheet = workbook.getSheet("Agriaku");
+
+        
+        
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
 
         //Untuk Header
         String searchBulan = searchData.getSearchBulan();
         String searchTahun = searchData.getSearchTahun();
+        String searchDivisi = searchData.getSearchDivisi();
+        
 
-        Row row15 = sheet.getRow(0);
+        Row row15 = agriakuSheet.getRow(0);
         if(row15 == null){
-            row15 = sheet.createRow(0);
+            row15 = agriakuSheet.createRow(0);
         }
         Cell cell15 = row15.getCell(15);
         if(cell15 == null){
@@ -90,9 +113,9 @@ public class ReportClientAgriakuService {
         }
         cell15.setCellValue(labelWorkDaysP);
 
-        Row row16 = sheet.getRow(0);
+        Row row16 = agriakuSheet.getRow(0);
         if(row16 == null){
-            row16 = sheet.createRow(0);
+            row16 = agriakuSheet.createRow(0);
         }
         Cell cell16 = row16.getCell(16);
         if(cell16 == null){
@@ -111,15 +134,18 @@ public class ReportClientAgriakuService {
         cell16.setCellValue(labelWorkDaysQ);
         //Untuk Data
         Set<Integer> formulaColums = new HashSet<>(Arrays.asList(
-            18,19,37,38,39,41,42,43,44,45,53,54,55,58,59,60,61,64,65,66,67,68
+            18,19,35,37,38,39,41,42,43,44,45,53,54,55,58,59,60,61,64,65,66,67,68
         ));
+
+        Set<Integer> formulaColumsbpjs = new HashSet<>(Arrays.asList(56,62));
 
         Set<Integer> nullColums = new HashSet<>(Arrays.asList(
             0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,63,70,71,72,73,74,75
         ));
         Set<Integer> alignCenter = Set.of(0,15, 16, 17, 18, 19, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33);
-        Set<Integer> alignRight = Set.of(12,13,75);
+        Set<Integer> alignRight = Set.of(2,12,13,75);
         Set<Integer> percenStyle = Set.of(19);
+        Set<Integer> textColumns = Set.of(69, 73);
         Set<Integer> moneyColumns = new HashSet<>();
         for(int i = 34; i <= 62; i++) moneyColumns.add(i);
         for(int i = 64; i <= 68; i++) moneyColumns.add(i);
@@ -128,16 +154,17 @@ public class ReportClientAgriakuService {
 
         //Untuk Sum Total
         int lastRow = startRowIndex + dataReportClientAgriaku .size();
-        Row sumRow = sheet.createRow(lastRow);
+        Row sumRow = agriakuSheet.createRow(lastRow);
+        int sumRowIndex = lastRow  + 1;
         Set<Integer> formulaSumColumns = new HashSet<>();
         for(int i = 20; i <= 68; i++)formulaSumColumns.add(i);
 
         //Untuk Data
         for(int i = 0; i < dataReportClientAgriaku.size(); i++){
             ReportClientAgriaku data = dataReportClientAgriaku.get(i);
-            Row row = sheet.getRow(startRowIndex + i);
+            Row row = agriakuSheet.getRow(startRowIndex + i);
             if(row == null){
-                row = sheet.createRow(startRowIndex + i);
+                row = agriakuSheet.createRow(startRowIndex + i);
             }
 
             Map<Integer, String> cellData = new HashMap<>();
@@ -184,9 +211,9 @@ public class ReportClientAgriakuService {
             cellData.put(50,data.getInsentifSalesOffcycles());
             cellData.put(51,data.getLembur());
             cellData.put(52,data.getKompensasi());
-            cellData.put(56,data.getPotonganBpjsPerusahaan());
+            //cellData.put(56,data.getPotonganBpjsPerusahaan());
             cellData.put(57,data.getPph21());
-            cellData.put(62,data.getBpjsKesehatanPerusahaan());
+            //cellData.put(62,data.getBpjsKesehatanPerusahaan());
             cellData.put(63,data.getIdCard());
             cellData.put(69,data.getAccount());
             cellData.put(70,data.getBank());
@@ -205,7 +232,11 @@ public class ReportClientAgriakuService {
                 if(formulaColums.contains(colIndex)){
                     String formula = ExcelFormulaHelperAgriaku.generateFormula(colIndex,startRowIndex + i + 1);
                     cell.setCellFormula(formula);
-                }else {
+                }else if(formulaColumsbpjs.contains(colIndex)){
+                    String formulabpjs = ExcelFormulaHelperAgriaku.formulabpjs(colIndex, data.getDub());
+                    cell.setCellFormula(formulabpjs);
+                }
+                else {
                     String value = cellData.getOrDefault(colIndex, "0");
 
                     if (value == null || value.trim().isEmpty()) {
@@ -217,16 +248,21 @@ public class ReportClientAgriakuService {
                         }
                         
                     } else {
-                        try {
-                            double numericValue = Double.parseDouble(value);
-                            if (numericValue == (int) numericValue) {
-                                cell.setCellValue((int) numericValue);
-                            } else {
-                                cell.setCellValue(numericValue);
-                            }
-                        } catch (NumberFormatException e) {
+                        if(textColumns.contains(colIndex)){
                             cell.setCellValue(value);
+                        }else{
+                            try {
+                                double numericValue = Double.parseDouble(value);
+                                if (numericValue == (int) numericValue) {
+                                    cell.setCellValue((int) numericValue);
+                                } else {
+                                    cell.setCellValue(numericValue);
+                                }
+                            } catch (NumberFormatException e) {
+                                cell.setCellValue(value);
+                            }
                         }
+                        
                     }
                 }
 
@@ -238,7 +274,10 @@ public class ReportClientAgriakuService {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
                 } else if (alignRight.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KANAN));
-                } else {
+                }else if(textColumns.contains(colIndex)){
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_TEXT));
+                }
+                 else {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KIRI));
                 }
 
@@ -246,9 +285,9 @@ public class ReportClientAgriakuService {
         }
 
         for(int colIndex = 0; colIndex <= 75; colIndex++){
-            Row headerRow = sheet.getRow(2);
+            Row headerRow = agriakuSheet.getRow(2);
             if (headerRow == null) {
-                headerRow = sheet.createRow(2);
+                headerRow = agriakuSheet.createRow(2);
             }
 
             Cell headerCell = headerRow.getCell(colIndex);
@@ -282,6 +321,118 @@ public class ReportClientAgriakuService {
             }
             sumCell.setCellStyle(sumStyle);
         }
+
+        //Sheet Invoice
+        Row rowInvoiceA2 = invoiceSheet.getRow(1);
+        if(rowInvoiceA2 == null) rowInvoiceA2 = invoiceSheet.createRow(1);
+        Cell cellInvoiceA2 = rowInvoiceA2.getCell(0);
+        String periodeInvoice = getFormattedWorkinPeriode(searchBulan, searchTahun, searchDivisi);
+        cellInvoiceA2.setCellValue("Periode " + periodeInvoice);
+
+        Row rowInvoiceA13 = invoiceSheet.getRow(12);
+        if(rowInvoiceA13 == null) rowInvoiceA13 = invoiceSheet.createRow(12);
+
+        Cell cellInoviceA13 = rowInvoiceA13.createCell(0);
+        cellInoviceA13.setCellValue(DateUtil.getTanggalNow());
+        cellInoviceA13.setCellStyle(style.get(ExcelStyleHelper.STYLE_BOLD));
+
+        Row rowInvoiceC4 = invoiceSheet.getRow(3);
+        if (rowInvoiceC4 == null) rowInvoiceC4 = invoiceSheet.createRow(3);
+
+        Cell cellInvoiceC4 = rowInvoiceC4.createCell(2);
+        cellInvoiceC4.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("C4",  startRowIndex, sumRowIndex));
+        cellInvoiceC4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceC5 = invoiceSheet.getRow(4);
+        if (rowInvoiceC5 == null) rowInvoiceC5 = invoiceSheet.createRow(4);
+
+        Cell cellInvoiceC5 = rowInvoiceC5.createCell(2);
+        cellInvoiceC5.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("C5",  startRowIndex, sumRowIndex));
+        cellInvoiceC5.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceC7 = invoiceSheet.getRow(6);
+        if (rowInvoiceC7 == null) rowInvoiceC7 = invoiceSheet.createRow(6);
+
+        Cell cellInvoiceC7 = rowInvoiceC7.createCell(2);
+        cellInvoiceC7.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("C7",  startRowIndex, sumRowIndex));
+        cellInvoiceC7.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+
+        Row rowInvoiceE4 = invoiceSheet.getRow(3);
+        if (rowInvoiceE4 == null) rowInvoiceE4 = invoiceSheet.createRow(3);
+
+        Cell cellInvoiceE4 = rowInvoiceE4.createCell(4);
+        cellInvoiceE4.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("E4",  startRowIndex, sumRowIndex));
+        cellInvoiceE4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceE5 = invoiceSheet.getRow(4);
+        if (rowInvoiceE5 == null) rowInvoiceE5 = invoiceSheet.createRow(4);
+
+        Cell cellInvoiceE5 = rowInvoiceE5.createCell(4);
+        cellInvoiceE5.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("E5",  startRowIndex, sumRowIndex));
+        cellInvoiceE5.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceE7 = invoiceSheet.getRow(6);
+        if (rowInvoiceE7 == null) rowInvoiceE7 = invoiceSheet.createRow(6);
+
+        Cell cellInvoiceE7 = rowInvoiceE7.createCell(4);
+        cellInvoiceE7.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("E7", startRowIndex, sumRowIndex));
+        cellInvoiceE7.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF4 = invoiceSheet.getRow(3);
+        if (rowInvoiceF4 == null) rowInvoiceF4 = invoiceSheet.createRow(3);
+
+        Cell cellInvoiceF4 = rowInvoiceF4.createCell(5);
+        cellInvoiceF4.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("F4",  startRowIndex, lastRow));
+        cellInvoiceF4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF5 = invoiceSheet.getRow(4);
+        if (rowInvoiceF5 == null) rowInvoiceF5 = invoiceSheet.createRow(4);
+
+        Cell cellInvoiceF5 = rowInvoiceF5.createCell(5);
+        cellInvoiceF5.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("F5",  startRowIndex, lastRow));
+        cellInvoiceF5.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF7 = invoiceSheet.getRow(6);
+        if (rowInvoiceF7 == null) rowInvoiceF7 = invoiceSheet.createRow(6);
+
+        Cell cellInvoiceF7 = rowInvoiceF7.createCell(5);
+        cellInvoiceF7.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("F7",  startRowIndex, lastRow));
+        cellInvoiceF7.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF8 = invoiceSheet.getRow(7);
+        if (rowInvoiceF8 == null) rowInvoiceF8 = invoiceSheet.createRow(7);
+
+        Cell cellInvoiceF8 = rowInvoiceF8.createCell(5);
+        cellInvoiceF8.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("F8",  startRowIndex, lastRow));
+        cellInvoiceF8.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF9 = invoiceSheet.getRow(8);
+        if (rowInvoiceF9 == null) rowInvoiceF9 = invoiceSheet.createRow(8);
+
+        Cell cellInvoiceF9 = rowInvoiceF9.createCell(5);
+        cellInvoiceF9.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("F9",  startRowIndex, lastRow));
+        cellInvoiceF9.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF10 = invoiceSheet.getRow(9);
+        if (rowInvoiceF10 == null) rowInvoiceF10 = invoiceSheet.createRow(9);
+
+        Cell cellInvoiceF10 = rowInvoiceF10.createCell(5);
+        cellInvoiceF10.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("F10",  startRowIndex, lastRow));
+        cellInvoiceF10.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+
+        Row rowInvoiceF11 = invoiceSheet.getRow(10);
+        if (rowInvoiceF11 == null) rowInvoiceF11 = invoiceSheet.createRow(10);
+
+        Cell cellInvoiceF11 = rowInvoiceF11.createCell(5);
+        cellInvoiceF11.setCellFormula(ExcelFormulaHelperAgriaku.formulaInvoice("F11",  startRowIndex, lastRow));
+        CellStyle sumStyle = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP);
+        byte[] yellowRgb = new byte[] {(byte) 8, (byte) 116, (byte) 196};
+        sumStyle = ExcelStyleHelper.applyColorToStyle(workbook, sumStyle, yellowRgb);
+        cellInvoiceF11.setCellStyle(sumStyle);
+
+
 
         workbook.setForceFormulaRecalculation(true);
         ServletOutputStream outputStream = response.getOutputStream();

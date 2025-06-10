@@ -195,6 +195,9 @@ public class ReportClientAgriaku {
     @Column(name = "resign_date")
     private String ResignDate;
 
+    @Column(name = "dub")
+    private String dub;
+
     public Long getNo() {
         return no;
     }
@@ -684,6 +687,16 @@ public class ReportClientAgriaku {
     public void setPeriodeEnd(LocalDate periodeEnd) {
         this.periodeEnd = periodeEnd;
     }
+
+    public String getDub() {
+        return dub;
+    }
+
+    public void setDub(String dub) {
+        this.dub = dub;
+    }
+
+    
 
     
 

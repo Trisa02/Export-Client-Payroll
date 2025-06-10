@@ -3,6 +3,7 @@ package com.tsa.spring.payroll.Utils;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.Locale;
 
 
@@ -92,8 +93,26 @@ public class DateUtil {
         }
     
         // Default jika divisi tidak cocok
-         return dayFormatter.format(start) + "-" + dayFormatter.format(end) + " " + monthYearFormatter.format(end);
+       return fullFormatter.format(start) + " sd " + fullFormatter.format(end);
         
+    }
+
+    public static String getTanggalNow() {
+        LocalDate now = LocalDate.now();
+        int day = now.getDayOfMonth();
+        String month = now.getMonth().getDisplayName(TextStyle.FULL, new Locale("id", "ID"));
+        int year = now.getYear();
+
+        return String.format("Jakarta, %d %s %d", day, month, year);
+    }
+
+    public static String getTanggalNowBy() {
+        LocalDate now = LocalDate.now();
+        int day = now.getDayOfMonth();
+        String month = now.getMonth().getDisplayName(TextStyle.FULL, new Locale("id", "ID"));
+        int year = now.getYear();
+
+        return String.format("%d %s %d", day, month, year);
     }
     
 }

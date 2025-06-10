@@ -82,6 +82,7 @@ public class ReportClientAFIService {
         ));
         Set<Integer> alignRight = Set.of(15,19,20,21,54,55,56);
         Set<Integer> moneyColumns = new HashSet<>();
+        Set<Integer> textColumns = Set.of( 18);
         for(int i = 22; i <= 53; i++) moneyColumns.add(i);
         moneyColumns.add(15);
     
@@ -169,20 +170,26 @@ public class ReportClientAFIService {
                         }
                         
                     } else {
-                        try {
-                            double numericValue = Double.parseDouble(value);
-                            if (numericValue == (int) numericValue) {
-                                cell.setCellValue((int) numericValue);
-                            } else {
-                                cell.setCellValue(numericValue);
-                            }
-                        } catch (NumberFormatException e) {
+                        if(textColumns.contains(colIndex)){
                             cell.setCellValue(value);
+                        }else{
+                            try {
+                                double numericValue = Double.parseDouble(value);
+                                if (numericValue == (int) numericValue) {
+                                    cell.setCellValue((int) numericValue);
+                                } else {
+                                    cell.setCellValue(numericValue);
+                                }
+                            } catch (NumberFormatException e) {
+                                cell.setCellValue(value);
+                            }
                         }
+                        
                     }
                 }
-
-                if (moneyColumns.contains(colIndex)) {
+                if (textColumns.contains(colIndex)){
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_TEXT));
+                }else if (moneyColumns.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
                 } else if (alignRight.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KANAN));

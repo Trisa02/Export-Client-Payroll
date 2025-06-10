@@ -139,6 +139,7 @@ public class ReportClientMitraOddityService {
         ));
         Set<Integer> alignCenter = Set.of(1);
         Set<Integer> alignRight = Set.of(15);
+        Set<Integer> textColumns = Set.of( 5,8);
         Set<Integer> moneyColumns = new HashSet<>();
         for(int i = 16; i <= 36; i++) moneyColumns.add(i);
         for(int i = 12; i <= 14; i++) moneyColumns.add(i);
@@ -207,15 +208,19 @@ public class ReportClientMitraOddityService {
                         }
                         
                     } else {
-                        try {
-                            double numericValue = Double.parseDouble(value);
-                            if (numericValue == (int) numericValue) {
-                                cell.setCellValue((int) numericValue);
-                            } else {
-                                cell.setCellValue(numericValue);
-                            }
-                        } catch (NumberFormatException e) {
+                        if(textColumns.contains(colIndex)){
                             cell.setCellValue(value);
+                        }else{
+                            try {
+                                double numericValue = Double.parseDouble(value);
+                                if (numericValue == (int) numericValue) {
+                                    cell.setCellValue((int) numericValue);
+                                } else {
+                                    cell.setCellValue(numericValue);
+                                }
+                            } catch (NumberFormatException e) {
+                                cell.setCellValue(value);
+                            }
                         }
                     }
                 }

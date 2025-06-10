@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
 public class ExcelFormulaHelperAgriaku {
 
     private static final Map<Integer, List<Integer>> formulaColumnsMap = new HashMap<>();
@@ -189,10 +190,73 @@ public class ExcelFormulaHelperAgriaku {
         return "0";  
     }
 
+    public static String formulabpjs(int colIndex,String dub){
+
+        if(colIndex == 56){
+            return String.format("IFERROR(%s*1%%,0)", dub);
+        }
+        else if(colIndex == 62){
+            return String.format("IFERROR(%s*4%%,0)", dub);
+        }
+
+        return "0";  
+    }
+
     public static String generateTotalFormula(int colIndex, int startRow, int endRow){
 
         String columnName = getExcelColumnName(colIndex);
         return String.format("SUM(%s%d:%s%d)", columnName, startRow, columnName, endRow);
+    }
+
+    public static String formulaInvoice(String type, int startRow,int endRow ){
+        String colBM = "BM";
+        String colAX = "AX";
+        String colAW = "AW";
+
+        switch (type) {
+            case "C4":
+                return String.format("'AGRIAKU'!%s%d-'AGRIAKU'!%s%d-'AGRIAKU'!%s%d",
+                colBM, endRow, colAX, endRow, colAW, endRow);
+                
+            case "C5" :
+                return String.format("'AGRIAKU'!%s%d", colAX, endRow); 
+                    
+            case "C7":
+                return "SUM(C4:C5)";
+            
+            case "E4":
+                return "(C4*D4)";
+
+            case "E5":
+                return "(C5*D5)";
+            
+            case "E7":
+                return "SUM(E4:E5)";
+            
+            case "F4":
+                return "ROUND(C4+E4,0)";
+            
+            case "F5":
+                return "ROUND(C5+E5,0)";
+
+            case "F7":
+                return "SUM(C7:E7)";
+
+            case "F8":
+                return "E7*11%";
+
+            case "F9":
+                return "E7*2%";
+
+            case "F10":
+                return "ROUND(SUM(F7:F8)-F9,0)";
+
+            case "F11":
+                return "F10";
+
+            default:
+                throw new IllegalArgumentException("Tipe rumus tidak dikenali: " + type);
+        }
     }
 
 

@@ -20,19 +20,19 @@ public class ReportClientSpecification {
             }
 
             if (searchData.getSearchUnit() != null && !searchData.getSearchUnit().isEmpty()) {
-                predicate = cb.and(predicate, cb.like(root.get("unitname"), "%" + searchData.getSearchUnit() + "%"));
+                predicate = cb.and(predicate, cb.like(root.get("unitname"),searchData.getSearchUnit()));
             }
 
             if (searchData.getSearchPosisi() != null && !searchData.getSearchPosisi().isEmpty()) {
-                predicate = cb.and(predicate, cb.like(root.get("position"), "%" + searchData.getSearchPosisi() + "%"));
+                predicate = cb.and(predicate, cb.like(root.get("position"),searchData.getSearchPosisi()));
             }
 
             if (searchData.getSearchBranch() != null && !searchData.getSearchBranch().isEmpty()) {
-                predicate = cb.and(predicate, cb.like(root.get("branch"), "%" + searchData.getSearchBranch() + "%"));
+                predicate = cb.and(predicate, cb.like(root.get("branch"),searchData.getSearchBranch()));
             }
 
             if (searchData.getSearchBulan() != null && !searchData.getSearchBulan().isEmpty()) {
-                predicate = cb.and(predicate, cb.like(root.get("monthpayroll"), "%" + searchData.getSearchBulan() + "%"));
+                predicate = cb.and(predicate, cb.like(root.get("monthpayroll"),searchData.getSearchBulan()));
             }
 
             if (searchData.getSearchTahun() != null && !searchData.getSearchTahun().isEmpty()) {

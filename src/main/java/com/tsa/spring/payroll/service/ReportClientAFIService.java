@@ -69,7 +69,15 @@ public class ReportClientAFIService {
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateAFI.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = workbook.getSheetAt(0);
+        Sheet sheet = workbook.getSheetAt(0); 
+        if ("afi".equalsIgnoreCase(exportType)) {
+            workbook.setSheetName(workbook.getSheetIndex(sheet), "AFI");
+        } else if ("msi".equalsIgnoreCase(exportType)) {
+            workbook.setSheetName(workbook.getSheetIndex(sheet), "MSI");
+        } else {
+            workbook.setSheetName(workbook.getSheetIndex(sheet), "Sheet");
+        }
+        
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
 

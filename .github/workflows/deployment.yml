@@ -1,0 +1,40 @@
+# name: Deploy to server
+
+# on:
+#   push:
+#     branches:
+#       - master
+
+# env:
+#   SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+#   SSH_USER: ${{ secrets.SSH_USER }}
+#   SSH_HOST: ${{ secrets.SSH_HOST }}
+#   WORK_DIR: ~/developer/springboot/export-client
+#   MAIN_BRANCH: master
+#   NAME_DIR: export-client
+#   SSH_PORT: ${{ secrets.SSH_PORT }}
+
+#   jobs:
+#     deploy:
+#       name: deploy
+#       runs-on: ubuntu-latest
+#       steps:
+#         - name: Deploy to Dev Server
+#           uses: appleboy/ssh-action@v1.0.0
+#           with:
+#             host: ${{ env.SSH_HOST }}
+#             username: ${{ env.SSH_USER }}
+#             key: ${{ env.SSH_PRIVATE_KEY }}
+#             port: ${{ env.SSH_PORT }}
+#             script: |
+#               cd ${{ env.WORK_DIR }}
+#               git pull
+#               export JAVA_HOME=/opt/jdk-17/jdk-17
+#               export PATH=$JAVA_HOME/bin:$PATH
+#               mvn clean package
+#               cp /root/developer/springboot/teleus-api/target/export-client.jar /home/tele
+#               cd /home/tele
+#               sudo systemctl stop teleus.service
+#               rm -rf export-client.jar
+#               sudo systemctl daemon-reload
+#               sudo systemctl start teleus.service

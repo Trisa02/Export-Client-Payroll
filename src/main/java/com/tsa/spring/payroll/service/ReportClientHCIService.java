@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -22,12 +23,12 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.tsa.spring.payroll.Utils.DateUtil;
-import com.tsa.spring.payroll.Utils.DateUtil.MonthFormatedtoIndo;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAdiraFinance;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperHCI;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
 import com.tsa.spring.payroll.entity.ReportClientHCI;
+import com.tsa.spring.payroll.repository.MasterDivisiRepo;
 import com.tsa.spring.payroll.repository.ReportClientHCIRepo;
 import com.tsa.spring.payroll.specification.ReportClientSpecification;
 
@@ -45,13 +46,18 @@ public class ReportClientHCIService {
     @Autowired
     private ReportClientSpecification reportClientSpecification;
 
+    @Autowired
+    private MasterDivisiRepo masterDivisiRepo;
+
     public String getFormattedWorkinPeriode(String bulan, String tahun,String divisi) {
         List<Object[]> list = reportClientHCIRepo.findWorkingPeriode(bulan, tahun);
         if (list == null || list.isEmpty()) {
             return "-";
         }
         Object[] workingPeriode = list.get(0);
-        return MonthFormatedtoIndo.formatRangeFromObjectArray(workingPeriode,divisi);
+        Optional<String>exportTypeDivisi = masterDivisiRepo.findExportTypeByNamaIgnoreCase(divisi);
+        String exportType = exportTypeDivisi.orElse(divisi);
+        return DateUtil.formatRangeFromObjectArray(workingPeriode,exportType);
     }
 
     public void exportReportClientHCI(HttpServletResponse response, SearchData searchData)throws Exception{
@@ -60,12 +66,14 @@ public class ReportClientHCIService {
         List<ReportClientHCI> dataClientHCI = reportClientHCIRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientHomeCreditIndonesia.xlsx");
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateHCI.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = workbook.getSheetAt(0);
+        //Sheet sheet = workbook.getSheetAt(0);
+        Sheet invoiceSheet = workbook.getSheet("INVOICE");
+        Sheet hciSheet = workbook.getSheet("Home Credit Indonesia");
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
         //Untuk Header
@@ -76,9 +84,9 @@ public class ReportClientHCIService {
         String WorkingPeriode = getFormattedWorkinPeriode(searchBulan,searchTahun,searchDivisi);
         String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchDivisi);
         
-        Row rowB3 = sheet.getRow(2);
+        Row rowB3 = hciSheet.getRow(2);
         if(rowB3 == null){
-            rowB3 = sheet.createRow(2);
+            rowB3 = hciSheet.createRow(2);
         }
 
         Cell cellB3 = rowB3.getCell(1);
@@ -95,9 +103,9 @@ public class ReportClientHCIService {
 
         
 
-        Row rowB4 = sheet.getRow(3);
+        Row rowB4 = hciSheet.getRow(3);
         if(rowB4 == null){
-            rowB4 = sheet.createRow(3);
+            rowB4 = hciSheet.createRow(3);
         }
 
         Cell cellB4 = rowB4.getCell(1);
@@ -106,9 +114,9 @@ public class ReportClientHCIService {
         }
         cellB4.setCellValue("Periode "+periode+ " (" +WorkingPeriode+")");
 
-        Row rowO5 = sheet.getRow(4);
+        Row rowO5 = hciSheet.getRow(4);
         if(rowO5 == null){
-            rowO5 = sheet.createRow(4);
+            rowO5 = hciSheet.createRow(4);
         }
 
         Cell cellO5 = rowO5.getCell(15);
@@ -141,6 +149,7 @@ public class ReportClientHCIService {
         ));
         Set<Integer> alignCenter = Set.of(1,2);
         Set<Integer> alignRight = Set.of(12,13,16);
+        Set<Integer> textColumns = Set.of( 2,3,6,11);
         Set<Integer> moneyColumns = new HashSet<>();
 
         for(int i = 17; i <= 39; i++) moneyColumns.add(i);
@@ -149,16 +158,18 @@ public class ReportClientHCIService {
         int startRowIndex = 7;
 
         int lastRow = startRowIndex + dataClientHCI.size();
-        Row sumRow = sheet.createRow(lastRow);
+        Row sumRow = hciSheet.createRow(lastRow);
+        int sumRowIndex = lastRow  + 1;
+
         Set<Integer> formulaSumColumn = new HashSet<>();
         for(int i = 13; i <= 39; i++)formulaSumColumn.add(i);
 
         for(int i=0; i< dataClientHCI.size(); i++){
 
             ReportClientHCI data = dataClientHCI.get(i);
-            Row row = sheet.getRow(startRowIndex + i);
+            Row row = hciSheet.getRow(startRowIndex + i);
             if(row == null){
-                row = sheet.createRow(startRowIndex + i);
+                row = hciSheet.createRow(startRowIndex + i);
             }
 
             Map<Integer, String> cellData = new HashMap<>();
@@ -219,15 +230,19 @@ public class ReportClientHCIService {
                         }
                         
                     } else {
-                        try {
-                            double numericValue = Double.parseDouble(value);
-                            if (numericValue == (int) numericValue) {
-                                cell.setCellValue((int) numericValue);
-                            } else {
-                                cell.setCellValue(numericValue);
-                            }
-                        } catch (NumberFormatException e) {
+                        if(textColumns.contains(colIndex)){
                             cell.setCellValue(value);
+                        }else{
+                            try {
+                                double numericValue = Double.parseDouble(value);
+                                if (numericValue == (int) numericValue) {
+                                    cell.setCellValue((int) numericValue);
+                                } else {
+                                    cell.setCellValue(numericValue);
+                                }
+                            } catch (NumberFormatException e) {
+                                cell.setCellValue(value);
+                            }
                         }
                     }
                 }
@@ -253,9 +268,9 @@ public class ReportClientHCIService {
 
         for(int colIndex = 1; colIndex <= 41; colIndex++){
     
-            Row headerRow = sheet.getRow(2);
+            Row headerRow = hciSheet.getRow(2);
             if (headerRow == null) {
-                headerRow = sheet.createRow(2);
+                headerRow = hciSheet.createRow(2);
             }
 
             Cell headerCell = headerRow.getCell(colIndex);
@@ -290,7 +305,70 @@ public class ReportClientHCIService {
             sumCell.setCellStyle(sumStyle);
             
         }
-       
+
+        //Untuk Invoice
+
+        
+
+        Row rowInvoiceA8 = invoiceSheet.getRow(6);
+        if(rowInvoiceA8 == null) rowInvoiceA8 = invoiceSheet.createRow(6);
+        Cell cellInvoiceA8 = rowInvoiceA8.getCell(0);
+        cellInvoiceA8.setCellValue("Periode "+ periode);
+
+        Row rowInvoiceA13 = invoiceSheet.getRow(12);
+        if(rowInvoiceA13 == null) rowInvoiceA13 = invoiceSheet.createRow(12);
+
+        Cell cellInvoiceA13 = rowInvoiceA13.createCell(0);
+        cellInvoiceA13.setCellValue(DateUtil.getTanggalNow());
+        cellInvoiceA13.setCellStyle(style.get(ExcelStyleHelper.STYLE_BOLD));
+
+        Row rowInvoiceB10 = invoiceSheet.getRow(9);
+        if(rowInvoiceB10 == null) rowInvoiceB10 = invoiceSheet.createRow(9);
+        Cell cellinvoiceB10 = rowInvoiceB10.createCell(1);
+        cellinvoiceB10.setCellValue("Biaya Tenaga Kerja PT Home Credit Indonesia Periode "+ periode);
+        cellinvoiceB10.setCellStyle(style.get(ExcelStyleHelper.STYLE_BOLD));
+
+        Row rowInvoice10 = invoiceSheet.getRow(9);
+        if (rowInvoice10 == null) {
+            rowInvoice10 = invoiceSheet.createRow(9);
+        }
+
+        Cell cellInvoiceC10 = rowInvoice10.createCell(2);
+        cellInvoiceC10.setCellFormula(ExcelFormulaHelperHCI.formulaInvoice("C10", startRowIndex, sumRowIndex));
+        cellInvoiceC10.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP));
+
+        Cell cellInvoiceD10 = rowInvoice10.createCell(3);
+        cellInvoiceD10.setCellFormula(ExcelFormulaHelperHCI.formulaInvoice("D10", startRowIndex, sumRowIndex));
+        cellInvoiceD10.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP));
+
+        Cell cellInvoiceE10 = rowInvoice10.createCell(4);
+        cellInvoiceE10.setCellFormula(ExcelFormulaHelperHCI.formulaInvoice("E10", startRowIndex, sumRowIndex));
+        cellInvoiceE10.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP));
+
+        Row rowInvoice11 = invoiceSheet.getRow(10);
+        if (rowInvoice11 == null) {
+            rowInvoice11 = invoiceSheet.createRow(10);
+        }
+
+        Cell cellInvoiceC11 = rowInvoice11.createCell(2); 
+        cellInvoiceC11.setCellFormula(ExcelFormulaHelperHCI.formulaInvoice("C11", startRowIndex, sumRowIndex));
+        CellStyle sumStyleC11 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP);
+        byte[] yellowRgb = new byte[] {(byte) 255, (byte) 252, (byte) 4};
+        sumStyleC11 = ExcelStyleHelper.applyColorToStyle(workbook, sumStyleC11, yellowRgb);
+        cellInvoiceC11.setCellStyle(sumStyleC11);
+
+        Cell cellInvoiceD11 = rowInvoice11.createCell(3); 
+        cellInvoiceD11.setCellFormula(ExcelFormulaHelperHCI.formulaInvoice("D11", startRowIndex, sumRowIndex));
+        CellStyle sumStyleD11 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP);
+        sumStyleD11 = ExcelStyleHelper.applyColorToStyle(workbook, sumStyleD11, yellowRgb);
+        cellInvoiceD11.setCellStyle(sumStyleD11);
+
+        Cell cellInvoiceE11 = rowInvoice11.createCell(4); 
+        cellInvoiceE11.setCellFormula(ExcelFormulaHelperHCI.formulaInvoice("E11", startRowIndex, sumRowIndex));
+        CellStyle sumStyleE11 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP);
+        sumStyleE11 = ExcelStyleHelper.applyColorToStyle(workbook, sumStyleE11, yellowRgb);
+        cellInvoiceE11.setCellStyle(sumStyleE11);
+
         workbook.setForceFormulaRecalculation(true);
         ServletOutputStream outputStream = response.getOutputStream();
         workbook.write(outputStream);

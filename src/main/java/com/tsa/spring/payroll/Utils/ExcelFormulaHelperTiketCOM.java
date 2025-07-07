@@ -160,4 +160,39 @@ public class ExcelFormulaHelperTiketCOM {
         String columnName = getExcelColumnName(colIndex);
         return String.format("COUNTA(%s%d:%s%d)", columnName, startRow, columnName, endRow);
     }
+
+    public static String formulaInvoice(String type, int startRow, int endRow){
+        String colAR = "AR";
+        
+        switch (type) {
+            case "G25":
+                return String.format("'CALCULATION'!%s%d",colAR,endRow);
+
+            case "I25":
+                return String.format("'CALCULATION'!%s%d",colAR,endRow);
+
+            case "I28":
+                return "ROUND(I25*G28,0)";
+
+            case "I34":
+                return "ROUND((I25+I28),0)";
+
+            case "I35":
+                return "ROUND(I28,0)";
+
+            case "I36":
+                return "ROUND((11/12*$I35)*12%,0)";
+
+            case "I37":
+                return "ROUND(2%*I28*-1,0)";
+            
+            case "I38":
+                return "ROUND(I34+I36+I37,0)";
+
+            default:
+                throw new IllegalArgumentException("Tipe rumus tidak dikenali: " + type);
+        }
+    }
+
+    
 }

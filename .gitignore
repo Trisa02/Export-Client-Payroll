@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignore Excel temp/lock files
+~$*
+
+# Optional: ignore all Excel files in template folder
+# src/main/resources/templates/excel/*.xlsx

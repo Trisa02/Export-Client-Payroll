@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -26,6 +27,7 @@ import com.tsa.spring.payroll.Utils.ExcelFormulaHelperAfi;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
 import com.tsa.spring.payroll.entity.ReportClientAFI;
+import com.tsa.spring.payroll.repository.MasterDivisiRepo;
 import com.tsa.spring.payroll.repository.ReportClientAFIRepo;
 import com.tsa.spring.payroll.specification.ReportClientSpecification;
 
@@ -43,18 +45,39 @@ public class ReportClientAFIService {
     @Autowired
     private ReportClientSpecification reportClientSpecification;
 
+    @Autowired
+    private MasterDivisiRepo masterDivisiRepo;
+
     public void exportReportClientAFI(HttpServletResponse response, SearchData searchData)throws Exception{
 
         Specification<ReportClientAFI> spec = reportClientSpecification.searchReportClient(searchData);
         List<ReportClientAFI> dataClientAFI = reportClientAFIRepo.findAll(spec);
 
+        Optional<String> exportTypeOpt = masterDivisiRepo.findExportTypeByNamaIgnoreCase(searchData.getSearchDivisi());
+        String exportType = exportTypeOpt.orElse(searchData.getSearchDivisi());
+
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        if ("afi".equalsIgnoreCase(exportType)) {
+            response.setHeader("Content-Disposition", "attachment; filename=ReportClientAFI.xlsx");
+        } else if ("msi".equalsIgnoreCase(exportType)) {
+            response.setHeader("Content-Disposition", "attachment; filename=ReportClientMSI.xlsx");
+        }else {
+            response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        }
+        
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateAFI.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = workbook.getSheetAt(0);
+        Sheet sheet = workbook.getSheetAt(0); 
+        if ("afi".equalsIgnoreCase(exportType)) {
+            workbook.setSheetName(workbook.getSheetIndex(sheet), "AFI");
+        } else if ("msi".equalsIgnoreCase(exportType)) {
+            workbook.setSheetName(workbook.getSheetIndex(sheet), "MSI");
+        } else {
+            workbook.setSheetName(workbook.getSheetIndex(sheet), "Sheet");
+        }
+        
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
 
@@ -67,6 +90,7 @@ public class ReportClientAFIService {
         ));
         Set<Integer> alignRight = Set.of(15,19,20,21,54,55,56);
         Set<Integer> moneyColumns = new HashSet<>();
+        Set<Integer> textColumns = Set.of( 18);
         for(int i = 22; i <= 53; i++) moneyColumns.add(i);
         moneyColumns.add(15);
     
@@ -154,20 +178,26 @@ public class ReportClientAFIService {
                         }
                         
                     } else {
-                        try {
-                            double numericValue = Double.parseDouble(value);
-                            if (numericValue == (int) numericValue) {
-                                cell.setCellValue((int) numericValue);
-                            } else {
-                                cell.setCellValue(numericValue);
-                            }
-                        } catch (NumberFormatException e) {
+                        if(textColumns.contains(colIndex)){
                             cell.setCellValue(value);
+                        }else{
+                            try {
+                                double numericValue = Double.parseDouble(value);
+                                if (numericValue == (int) numericValue) {
+                                    cell.setCellValue((int) numericValue);
+                                } else {
+                                    cell.setCellValue(numericValue);
+                                }
+                            } catch (NumberFormatException e) {
+                                cell.setCellValue(value);
+                            }
                         }
+                        
                     }
                 }
-
-                if (moneyColumns.contains(colIndex)) {
+                if (textColumns.contains(colIndex)){
+                    cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_TEXT));
+                }else if (moneyColumns.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
                 } else if (alignRight.contains(colIndex)) {
                     cell.setCellStyle(style.get(ExcelStyleHelper.STYLE_KANAN));

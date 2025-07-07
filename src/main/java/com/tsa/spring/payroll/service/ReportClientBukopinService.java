@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -20,11 +21,12 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import com.tsa.spring.payroll.Utils.DateUtil.MonthFormatedtoIndo;
+import com.tsa.spring.payroll.Utils.DateUtil;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperBukopin;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
 import com.tsa.spring.payroll.entity.ReportClientBukopin;
+import com.tsa.spring.payroll.repository.MasterDivisiRepo;
 import com.tsa.spring.payroll.repository.ReportClientBukopinRepo;
 import com.tsa.spring.payroll.specification.ReportClientSpecification;
 
@@ -42,13 +44,18 @@ public class ReportClientBukopinService {
     @Autowired
     private ReportClientSpecification reportClientSpecification;
 
+    @Autowired
+    private MasterDivisiRepo masterDivisiRepo;
+
     public String getFormattedWorkinPeriode(String bulan, String tahun,String divisi) {
         List<Object[]> list = reportClientBukopinRepo.findWorkingPeriode(bulan, tahun);
         if (list == null || list.isEmpty()) {
             return "-";
         }
         Object[] workingPeriode = list.get(0);
-        return MonthFormatedtoIndo.formatRangeFromObjectArray(workingPeriode,divisi);
+        Optional<String>exportTypeDivisi = masterDivisiRepo.findExportTypeByNamaIgnoreCase(divisi);
+        String exportType = exportTypeDivisi.orElse(divisi);
+        return DateUtil.formatRangeFromObjectArray(workingPeriode,exportType);
     }
 
     public void exportClientBukopin(HttpServletResponse response, SearchData searchData)throws Exception{
@@ -57,16 +64,19 @@ public class ReportClientBukopinService {
         List<ReportClientBukopin> dataReportClients = reportClientBukopinRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientBankKBBukopin.xlsx");
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TamplateKBBukopin.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = workbook.getSheetAt(0);
+        // Sheet sheet = workbook.getSheetAt(0);
+        Sheet invoiceSheet = workbook.getSheet("Invoice");
+        Sheet bukopinSheet = workbook.getSheet("Bukopin");
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
 
-        //Untuk Data Header
+        ///Data Untuk Sheet Bukopin
+        //Untuk Data Header Sheet Bukopin
         String searchBulan = searchData.getSearchBulan();
         String searchTahun = searchData.getSearchTahun();
         String searchDivisi = searchData.getSearchDivisi();
@@ -74,9 +84,9 @@ public class ReportClientBukopinService {
         String WorkingPeriode = getFormattedWorkinPeriode(searchBulan,searchTahun,searchDivisi);
         //String periode = DateUtil.dataPeriode(searchBulan, searchTahun,searchDivisi);
 
-        Row rowB3 = sheet.getRow(2);
+        Row rowB3 = bukopinSheet.getRow(2);
         if(rowB3 == null){
-            rowB3 = sheet.createRow(2);
+            rowB3 = bukopinSheet.createRow(2);
         }
 
         Cell cellB3 = rowB3.getCell(0);
@@ -91,9 +101,9 @@ public class ReportClientBukopinService {
             cellB3.setCellValue(searchDivisi);
         }
 
-        Row rowB4 = sheet.getRow(3);
+        Row rowB4 = bukopinSheet.getRow(3);
         if(rowB4 == null){
-            rowB4 = sheet.createRow(3);
+            rowB4 = bukopinSheet.createRow(3);
         }
 
         Cell cellB4 = rowB4.getCell(0);
@@ -102,9 +112,7 @@ public class ReportClientBukopinService {
         }
         cellB4.setCellValue("Periode "+ WorkingPeriode);
 
-
-
-        //Untuk Data
+        //Untuk Sheet Bukpin Data Perulangan
         Set<Integer> formulaColumns = new HashSet<>(Arrays.asList(
             0,13,21,22,23,24,25,26,34,35,36,37,38,39
         ));
@@ -121,20 +129,22 @@ public class ReportClientBukopinService {
 
         int startRowIndex = 6;
 
-        //Untuk Data Sum
+        //Untuk Data Sum Sheet Bukopin
         int lastRow = startRowIndex + dataReportClients.size();
-        Row sumRow = sheet.createRow(lastRow);
+        Row sumRow = bukopinSheet.createRow(lastRow);
+        int sumRowIndex = lastRow  + 1;
+
         Cell sumLabelCell = sumRow.createCell(2);
         sumLabelCell.setCellValue("Total");
         Set<Integer> formulaSumColumns = new HashSet<>();
         for(int i = 12; i <= 39; i++) formulaSumColumns.add(i);
 
-        //Perulangan Data
+        //Perulangan Data Sheet Bukopin
         for(int i = 0; i < dataReportClients.size(); i++){
             ReportClientBukopin data = dataReportClients.get(i);
-            Row row = sheet.getRow(startRowIndex + i);
+            Row row = bukopinSheet.getRow(startRowIndex + i);
             if(row == null){
-                row = sheet.createRow(startRowIndex + i);
+                row = bukopinSheet.createRow(startRowIndex + i);
             }
 
             Map<Integer, String> cellData = new HashMap<>();
@@ -222,10 +232,11 @@ public class ReportClientBukopinService {
            
         }
 
+        //Untuk Formula Header Sheet Bukopin
         for(int colIndex = 0; colIndex <=46; colIndex++){
-            Row headerRow = sheet.getRow(2);
+            Row headerRow = bukopinSheet.getRow(2);
             if (headerRow == null) {
-                headerRow = sheet.createRow(2);
+                headerRow = bukopinSheet.createRow(2);
             }
 
             Cell headerCell = headerRow.getCell(colIndex);
@@ -257,6 +268,116 @@ public class ReportClientBukopinService {
             sumStyle = ExcelStyleHelper.applyColorToStyle(workbook, sumStyle, yellowRgb);
             sumCell.setCellStyle(sumStyle);
         }
+
+
+        ///Sheet Invoice
+        Row rowInvoiceA2 = invoiceSheet.getRow(1);
+        if(rowInvoiceA2 == null){
+            rowInvoiceA2 = invoiceSheet.createRow(1);
+        }
+
+        Cell cellInvoiceA2 = rowInvoiceA2.getCell(0);
+        if(cellInvoiceA2 == null){
+            cellInvoiceA2 = rowInvoiceA2.createCell(0);
+        }
+        cellInvoiceA2.setCellValue("Periode "+ WorkingPeriode);
+
+        Row rowInvoiceB4 = invoiceSheet.getRow(3);
+        if(rowInvoiceB4 == null) rowInvoiceB4 = invoiceSheet.createRow(3);
+
+        Cell cellInvoiceB4 = rowInvoiceB4.createCell(1);
+        String labelPeriode;
+        if (searchBulan != null && !searchBulan.isEmpty() &&
+            searchTahun != null && !searchTahun.isEmpty()) {
+            
+            int bulanInt = Integer.parseInt(searchBulan);
+            String bulanNamaStr = DateUtil.bulanNama[bulanInt - 1]; 
+            labelPeriode = bulanNamaStr + " " + searchTahun;
+        } else {
+            labelPeriode = "Allowance";
+        }
+        cellInvoiceB4.setCellValue("Biaya Jasa Bank Bukopin Periode "+labelPeriode);
+        cellInvoiceB4.setCellStyle(style.get(ExcelStyleHelper.STYLE_BOLD));
+
+        Row rowInvoiceC4 = invoiceSheet.getRow(3);
+        if (rowInvoiceC4 == null) rowInvoiceC4 = invoiceSheet.createRow(3);
+
+        Cell cellInvoiceC4 = rowInvoiceC4.createCell(2);
+        cellInvoiceC4.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("C4", 34, startRowIndex, sumRowIndex));
+        cellInvoiceC4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceE4 = invoiceSheet.getRow(3);
+        if (rowInvoiceE4 == null) rowInvoiceE4 = invoiceSheet.createRow(3);
+
+        Cell cellInvoiceE4 = rowInvoiceE4.createCell(4);
+        cellInvoiceE4.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("E4", 35, startRowIndex, sumRowIndex));
+        cellInvoiceE4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF4 = invoiceSheet.getRow(3);
+        if (rowInvoiceF4 == null) rowInvoiceF4 = invoiceSheet.createRow(3);
+
+        Cell cellInvoiceF4 = rowInvoiceF4.createCell(5);
+        cellInvoiceF4.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("F4", 35, startRowIndex, lastRow));
+        cellInvoiceF4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceC7 = invoiceSheet.getRow(6);
+        if (rowInvoiceC7 == null) rowInvoiceC7 = invoiceSheet.createRow(6);
+
+        Cell cellInvoiceC7 = rowInvoiceC7.createCell(2);
+        cellInvoiceC7.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("C7", 35, startRowIndex, lastRow));
+        cellInvoiceC7.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceE7 = invoiceSheet.getRow(6);
+        if (rowInvoiceE7 == null) rowInvoiceE7 = invoiceSheet.createRow(6);
+
+        Cell cellInvoiceE7 = rowInvoiceE7.createCell(4);
+        cellInvoiceE7.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("E7", 35, startRowIndex, lastRow));
+        cellInvoiceE7.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF7 = invoiceSheet.getRow(6);
+        if (rowInvoiceF7 == null) rowInvoiceF7 = invoiceSheet.createRow(6);
+
+        Cell cellInvoiceF7 = rowInvoiceF7.createCell(5);
+        cellInvoiceF7.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("F7", 35, startRowIndex, lastRow));
+        cellInvoiceF7.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF8 = invoiceSheet.getRow(7);
+        if (rowInvoiceF8 == null) rowInvoiceF8 = invoiceSheet.createRow(7);
+
+        Cell cellInvoiceF8 = rowInvoiceF8.createCell(5);
+        cellInvoiceF8.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("F8", 35, startRowIndex, lastRow));
+        cellInvoiceF8.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF9 = invoiceSheet.getRow(8);
+        if (rowInvoiceF9 == null) rowInvoiceF9 = invoiceSheet.createRow(8);
+
+        Cell cellInvoiceF9 = rowInvoiceF9.createCell(5);
+        cellInvoiceF9.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("F9", 35, startRowIndex, lastRow));
+        cellInvoiceF9.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF10 = invoiceSheet.getRow(9);
+        if (rowInvoiceF10 == null) rowInvoiceF10 = invoiceSheet.createRow(9);
+
+        Cell cellInvoiceF10 = rowInvoiceF10.createCell(5);
+        cellInvoiceF10.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("F10", 35, startRowIndex, lastRow));
+        cellInvoiceF10.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE));
+
+        Row rowInvoiceF11 = invoiceSheet.getRow(10);
+        if (rowInvoiceF11 == null) rowInvoiceF11 = invoiceSheet.createRow(10);
+
+        Cell cellInvoiceF11 = rowInvoiceF11.createCell(5);
+        cellInvoiceF11.setCellFormula(ExcelFormulaHelperBukopin.formulaInvoice("F11", 35, startRowIndex, lastRow));
+        CellStyle sumStyle = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RP);
+        byte[] yellowRgb = new byte[] {(byte) 8, (byte) 116, (byte) 196};
+        sumStyle = ExcelStyleHelper.applyColorToStyle(workbook, sumStyle, yellowRgb);
+        cellInvoiceF11.setCellStyle(sumStyle);
+
+        Row rowInvoiceA13 = invoiceSheet.getRow(12);
+        if(rowInvoiceA13 == null) rowInvoiceA13 = invoiceSheet.createRow(12);
+
+        Cell cellInoviceA13 = rowInvoiceA13.createCell(0);
+        cellInoviceA13.setCellValue(DateUtil.getTanggalNow());
+        cellInoviceA13.setCellStyle(style.get(ExcelStyleHelper.STYLE_BOLD));
 
 
         workbook.setForceFormulaRecalculation(true);

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
 public class ExcelFormulaHelperAdiraFinance {
 
     private static final Map<Integer, List<Integer>> formulaColumnsMap =new HashMap<>();
@@ -104,5 +105,35 @@ public class ExcelFormulaHelperAdiraFinance {
         String columnName = getExcelColumnName(colIndex);
         return String.format("SUM(%s%d:%s%d)", columnName, startRow, columnName, endRow);
     } 
+
+    public static String formulaInvoice(String type, int startRow,int endRow){
+
+        String colW = "W";
+        String colX = "X";
+
+        switch (type) {
+            case "C11":
+                return String.format("'Adira Finance'!%s%d", colW, endRow);
+                
+            case "D11":
+                return String.format("'Adira Finance'!%s%d", colX, endRow);
+
+            case "E11":
+                return "SUM(C11:D11)";
+
+            case "C12":
+                return "SUM(C11:C11,0)";
+            
+            case "D12":
+                return "SUM(D11:D11,0)";
+
+            case "E12":
+                return "SUM(E11:E11,0)";
+        
+            default:
+                throw new IllegalArgumentException("Tipe rumus tidak dikenali: " + type);
+        }
+
+    }
 
 }

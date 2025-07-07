@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
@@ -22,11 +23,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.tsa.spring.payroll.Utils.DateUtil;
-import com.tsa.spring.payroll.Utils.DateUtil.MonthFormatedtoIndo;
 import com.tsa.spring.payroll.Utils.ExcelFormulaHelperTiketCOM;
 import com.tsa.spring.payroll.Utils.ExcelStyleHelper;
 import com.tsa.spring.payroll.dto.SearchData;
 import com.tsa.spring.payroll.entity.ReportClientTiketCOM;
+import com.tsa.spring.payroll.repository.MasterDivisiRepo;
 import com.tsa.spring.payroll.repository.ReportClientTiketComRepo;
 import com.tsa.spring.payroll.specification.ReportClientSpecification;
 
@@ -42,6 +43,9 @@ public class ReportClientTiketComService {
     private ReportClientTiketComRepo reportClientTiketComRepo;
 
     @Autowired
+    private MasterDivisiRepo masterDivisiRepo;
+
+    @Autowired
     private ReportClientSpecification reportClientSpecification;
 
     public String getFormattedWorkinPeriode(String bulan, String tahun,String divisi) {
@@ -50,7 +54,9 @@ public class ReportClientTiketComService {
             return "-";
         }
         Object[] workingPeriode = list.get(0);
-        return MonthFormatedtoIndo.formatRangeFromObjectArray(workingPeriode,divisi);
+        Optional<String>exportTypeDivisi = masterDivisiRepo.findExportTypeByNamaIgnoreCase(divisi);
+        String exportType = exportTypeDivisi.orElse(divisi);
+        return DateUtil.formatRangeFromObjectArray(workingPeriode,exportType);
     }
     
     
@@ -60,12 +66,15 @@ public class ReportClientTiketComService {
         List<ReportClientTiketCOM> dataClientTiketCOM = reportClientTiketComRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientTIKETCOM.xlsx");
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateTiket.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = workbook.getSheetAt(0);
+
+        //Sheet sheet = workbook.getSheetAt(0);
+        Sheet invoiceSheet = workbook.getSheet("INVOICE");
+        Sheet tiketSheet = workbook.getSheet("CALCULATION");
 
         Map<String, CellStyle> style = ExcelStyleHelper.createStyles(workbook);
 
@@ -76,9 +85,9 @@ public class ReportClientTiketComService {
         String searchDivisi = searchData.getSearchDivisi();
         String WorkingPeriode = getFormattedWorkinPeriode(searchBulan,searchTahun,searchDivisi);
         
-        Row row3 = sheet.getRow(3);
+        Row row3 = tiketSheet.getRow(3);
         if(row3 == null){
-            row3 = sheet.createRow(3);
+            row3 = tiketSheet.createRow(3);
         }
         Cell cellc = row3.getCell(2);
         if(cellc == null){
@@ -86,9 +95,9 @@ public class ReportClientTiketComService {
         }
         cellc.setCellValue(WorkingPeriode);
 
-        Row row4 = sheet.getRow(4);
+        Row row4 = tiketSheet.getRow(4);
         if(row4 == null){
-            row4 = sheet.createRow(4);
+            row4 = tiketSheet.createRow(4);
         }
         Cell cell2 = row4.getCell(2);
         if(cell2 == null){
@@ -108,9 +117,9 @@ public class ReportClientTiketComService {
 
         cell2.setCellValue(labelPeriode);
 
-        Row row9 = sheet.getRow(8);
+        Row row9 = tiketSheet.getRow(8);
         if(row9  == null){
-            row9  = sheet.createRow(8);
+            row9  = tiketSheet.createRow(8);
         }
         Cell cell42 = row9 .getCell(42);
         if(cell42 == null){
@@ -131,7 +140,7 @@ public class ReportClientTiketComService {
         int sumRowIndex = 6;
         int startRowIndex = 10;
         int lastRow = startRowIndex + dataClientTiketCOM.size();
-        Row sumRow = sheet.createRow(sumRowIndex);
+        Row sumRow = tiketSheet.createRow(sumRowIndex);
         // Cell countC7 = sumRow.createCell(2);
         // countC7.setCellValue("Total");
         Set<Integer> formulaSumColumns = new HashSet<>();
@@ -139,9 +148,9 @@ public class ReportClientTiketComService {
         for(int i =19; i <= 38; i++)formulaSumColumns.add(i);
 
         for(int colIndex = 2; colIndex <= 40; colIndex++){
-            Row headerRow = sheet.getRow(2);
+            Row headerRow = tiketSheet.getRow(2);
             if (headerRow == null) {
-                headerRow = sheet.createRow(2);
+                headerRow = tiketSheet.createRow(2);
             }
 
             Cell headerCell = headerRow.getCell(colIndex);
@@ -205,9 +214,9 @@ public class ReportClientTiketComService {
         for(int i = 0; i < dataClientTiketCOM.size(); i++){
 
             ReportClientTiketCOM data=dataClientTiketCOM.get(i);
-            Row row = sheet.getRow(startRowIndex + i);
+            Row row = tiketSheet.getRow(startRowIndex + i);
             if(row == null){
-                row = sheet.createRow(startRowIndex + i);
+                row = tiketSheet.createRow(startRowIndex + i);
             }
 
             Map<Integer, String> cellData = new HashMap<>();
@@ -298,9 +307,9 @@ public class ReportClientTiketComService {
                 int rowIndex = entry.getKey();
                 String formula = entry.getValue();
 
-                Row rowar = sheet.getRow(rowIndex);
+                Row rowar = tiketSheet.getRow(rowIndex);
                 if (rowar == null) {
-                    rowar = sheet.createRow(rowIndex);
+                    rowar = tiketSheet.createRow(rowIndex);
                 }
 
                 Cell cell = rowar.createCell(colAR); 
@@ -310,7 +319,91 @@ public class ReportClientTiketComService {
                 cell.setCellStyle(sumStyle);
 
             }
+
+            int rowYz = 3; 
+
+            Row rowYz4 = tiketSheet.getRow(rowYz);
+            if (rowYz4 == null) {
+                rowYz4 = tiketSheet.createRow(rowYz);
+            }
+
+            // Kolom Y = index ke-24
+            Cell cellY4 = rowYz4.createCell(24); 
+            cellY4.setCellFormula("Y3*1%");
+            cellY4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
+
+            // Kolom Z = index ke-25
+            Cell cellZ4 = rowYz4.createCell(25); 
+            cellZ4.setCellFormula("Z3*1%");
+            cellZ4.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG));
         }
+
+        ///Untuk Invoice
+        Row rowInvoiceI21 = invoiceSheet.getRow(20);
+        if(rowInvoiceI21 == null) rowInvoiceI21 = invoiceSheet.createRow(20);
+        Cell cellInvoiceI21 = rowInvoiceI21.createCell(8);
+        cellInvoiceI21.setCellValue(DateUtil.getTanggalNowBy());
+     
+
+        Row rowInvoiceG25 = invoiceSheet.getRow(24);
+        if(rowInvoiceG25 == null) rowInvoiceG25 = invoiceSheet.createRow(24);
+
+        Cell cellInvoiceG25 = rowInvoiceG25.createCell(6);
+        cellInvoiceG25.setCellFormula(ExcelFormulaHelperTiketCOM.formulaInvoice("G25", startRowIndex, 14));
+        cellInvoiceG25.setCellStyle(style.get(ExcelStyleHelper.STYLE_KANAN_INVOICE));
+
+        Row rowInvoiceI25 = invoiceSheet.getRow(24);
+        if(rowInvoiceI25 == null) rowInvoiceI25 = invoiceSheet.createRow(24);
+        Cell cellIncoiveI25 = rowInvoiceI25.createCell(8);
+        cellIncoiveI25.setCellFormula(ExcelFormulaHelperTiketCOM.formulaInvoice("I25", startRowIndex,10));
+        cellIncoiveI25.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RUPIAH));
+
+        Row rowInvoiceI28 = invoiceSheet.getRow(27);
+        if(rowInvoiceI28 == null) rowInvoiceI28 = invoiceSheet.createRow(27);
+        Cell cellIncoiveI28 = rowInvoiceI28.createCell(8);
+        cellIncoiveI28.setCellFormula(ExcelFormulaHelperTiketCOM.formulaInvoice("I28", startRowIndex,10));
+        cellIncoiveI28.setCellStyle(style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RUPIAH));
+
+        Row rowInvoiceI34 = invoiceSheet.getRow(33);
+        if(rowInvoiceI34 == null) rowInvoiceI34 = invoiceSheet.createRow(33);
+        Cell cellInvoiceI34 = rowInvoiceI34.createCell(8);
+        cellInvoiceI34.setCellFormula(ExcelFormulaHelperTiketCOM.formulaInvoice("I34", startRowIndex, lastRow));
+        CellStyle sumSytleI34 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RUPIAH_BOLD);
+        byte[] yellowRgb = new byte[] {(byte) 200, (byte) 196, (byte) 196};
+        sumSytleI34 = ExcelStyleHelper.applyColorToStyle(workbook, sumSytleI34, yellowRgb);
+        cellInvoiceI34.setCellStyle(sumSytleI34);
+
+        Row rowInvoiceI35 = invoiceSheet.getRow(34);
+        if(rowInvoiceI35 == null) rowInvoiceI35 = invoiceSheet.createRow(34);
+        Cell cellInvoiceI35 = rowInvoiceI35.createCell(8);
+        cellInvoiceI35.setCellFormula(ExcelFormulaHelperTiketCOM.formulaInvoice("I35", startRowIndex, lastRow));
+        CellStyle sumStyleI35 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RUPIAH_BOLD);
+        sumStyleI35 = ExcelStyleHelper.applyColorToStyle(workbook, sumStyleI35, yellowRgb);
+        cellInvoiceI35.setCellStyle(sumStyleI35);
+
+        Row rowInvoiceI36 = invoiceSheet.getRow(35);
+        if(rowInvoiceI36 == null) rowInvoiceI36 = invoiceSheet.createRow(35);
+        Cell cellInvoiceI36 = rowInvoiceI36.createCell(8);
+        cellInvoiceI36.setCellFormula(ExcelFormulaHelperTiketCOM.formulaInvoice("I36", startRowIndex, lastRow));
+        CellStyle sumStyleI36 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RUPIAH_BOLD);
+        sumStyleI36 = ExcelStyleHelper.applyColorToStyle(workbook, sumStyleI36, yellowRgb);
+        cellInvoiceI36.setCellStyle(sumStyleI36);
+
+        Row rowInvoiceI37 = invoiceSheet.getRow(36);
+        if(rowInvoiceI37 == null) rowInvoiceI37 = invoiceSheet.createRow(36);
+        Cell cellInvoiceI37 = rowInvoiceI37.createCell(8);
+        cellInvoiceI37.setCellFormula(ExcelFormulaHelperTiketCOM.formulaInvoice("I37", startRowIndex, lastRow));
+        CellStyle sumStyleI37 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RUPIAH_BOLD);
+        sumStyleI37 = ExcelStyleHelper.applyColorToStyle(workbook, sumStyleI37, yellowRgb);
+        cellInvoiceI37.setCellStyle(sumStyleI37);
+
+        Row rowInvoiceI38 = invoiceSheet.getRow(37);
+        if(rowInvoiceI38 == null) rowInvoiceI38 = invoiceSheet.createRow(37);
+        Cell cellInvoiceI38 = rowInvoiceI38.createCell(8);
+        cellInvoiceI38.setCellFormula(ExcelFormulaHelperTiketCOM.formulaInvoice("I36", startRowIndex, lastRow));
+        CellStyle sumStyleI38 = style.get(ExcelStyleHelper.STYLE_UANG_INVOICE_RUPIAH_BOLD);
+        sumStyleI38 = ExcelStyleHelper.applyColorToStyle(workbook, sumStyleI38, yellowRgb);
+        cellInvoiceI38.setCellStyle(sumStyleI38);
 
         workbook.setForceFormulaRecalculation(true);
         ServletOutputStream outputStream = response.getOutputStream();

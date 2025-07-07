@@ -49,7 +49,7 @@ public class ReportClientTigerSnusService {
         List<ReportClientTigerSnus> dataClientTigerSnus = reportClientTigerSnusRepo.findAll(spec);
 
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=ReportClient.xlsx");
+        response.setHeader("Content-Disposition", "attachment; filename=ReportClientTigerSnus.xlsx");
 
         ClassPathResource temPathResource = new ClassPathResource("templates/excel/TemplateTigerSnus.xlsx");
         InputStream inputStream = temPathResource.getInputStream();
@@ -138,6 +138,7 @@ public class ReportClientTigerSnusService {
 
         Set<Integer> alignCenter = Set.of(1,15);
         Set<Integer> alignRight = Set.of(14);
+        Set<Integer> textColumns = Set.of( 5,8);
         Set<Integer> nullColums = new HashSet<>(Arrays.asList(
             1,2,3,4,5,6,7,8,9,10,11,12,37,38
         ));
@@ -215,15 +216,19 @@ public class ReportClientTigerSnusService {
                         }
                         
                     } else {
-                        try {
-                            double numericValue = Double.parseDouble(value);
-                            if (numericValue == (int) numericValue) {
-                                cell.setCellValue((int) numericValue);
-                            } else {
-                                cell.setCellValue(numericValue);
-                            }
-                        } catch (NumberFormatException e) {
+                        if(textColumns.contains(colIndex)){
                             cell.setCellValue(value);
+                        }else{
+                            try {
+                                double numericValue = Double.parseDouble(value);
+                                if (numericValue == (int) numericValue) {
+                                    cell.setCellValue((int) numericValue);
+                                } else {
+                                    cell.setCellValue(numericValue);
+                                }
+                            } catch (NumberFormatException e) {
+                                cell.setCellValue(value);
+                            }
                         }
                     }
                 }

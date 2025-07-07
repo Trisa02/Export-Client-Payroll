@@ -93,4 +93,33 @@ public class ExcelFormulaHelperHCI {
         String columnName = getExcelColumnName(colIndex);
         return String.format("SUM(%s%d:%s%d)", columnName, startRow, columnName, endRow);
     } 
+
+    public static String formulaInvoice(String type, int startRow,int endRow){
+        String colAI = "AI";
+        String colAJ = "AJ";
+
+        switch (type) {
+           case "C10":
+                return String.format("'Home Credit Indonesia'!%s%d",colAI,endRow);
+
+            case "D10":
+                return String.format("'Home Credit Indonesia'!%s%d",colAJ,endRow);
+
+            case "E10":
+                return "C10+D10";
+
+            case "C11":
+                return "SUM(C10:C10)";
+
+            case "D11":
+                return "SUM(D10:D10)";
+
+            case "E11":
+                return "SUM(E10:E10)";
+
+            default:
+                throw new IllegalArgumentException("Tipe rumus tidak dikenali: " + type);
+
+        }
+    }
 }
